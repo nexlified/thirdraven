@@ -1,0 +1,41 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install \
+            fastapi[standard] \
+            sqlmodel \
+            pydantic[email] \
+            pydantic-settings \
+            asyncpg \
+            python-jose[cryptography] \
+            bcrypt \
+            python-multipart \
+            pytest \
+            pytest-asyncio \
+            httpx
+
+      - name: Run tests
+        run: pytest --tb=short -q
+        env:
+          DATABASE_URL: postgresql+asyncpg://thirdraven:secret@localhost:5432/thirdraven_db
+          SECRET_KEY: test-secret-key

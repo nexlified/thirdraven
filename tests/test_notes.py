@@ -1,0 +1,255 @@
+import uuid
+from datetime import datetime
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from app.api.v1.notes import router as notes_router
+from app.core.database import get_session
+from app.core.deps import get_current_user
+from app.models.user import User
+from app.schemas.note import NotePublicRead
+from app.schemas.vocabulary import TermSlim
+
+OWNER_ID = uuid.uuid4()
+NOTE_ID = uuid.uuid4()
+PERSON_ID = uuid.uuid4()
+ASSET_ID = uuid.uuid4()
+TAG_TERM_ID = uuid.uuid4()
+
+FAKE_USER = User(
+    id=OWNER_ID,
+    username="testuser",
+    email="test@example.com",
+    hashed_password="hashed",
+    is_active=True,
+    created_at=datetime.utcnow(),
+)
+
+IMPORTANT_TERM = TermSlim(id=TAG_TERM_ID, name="Important", slug="important")
+
+
+def make_note(**kwargs) -> NotePublicRead:
+    defaults = dict(
+        id=NOTE_ID,
+        owner_id=OWNER_ID,
+        title="Meeting notes",
+        body=None,
+        pinned=False,
+        person_id=None,
+        asset_id=None,
+        subscription_id=None,
+        tags=[],
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    defaults.update(kwargs)
+    return NotePublicRead(**defaults)
+
+
+@pytest.fixture
+def app_client():
+    app = FastAPI()
+    app.include_router(notes_router, prefix="/api/v1")
+
+    fake_db = AsyncMock()
+
+    async def override_get_session():
+        yield fake_db
+
+    async def override_get_current_user():
+        return FAKE_USER
+
+    app.dependency_overrides[get_session] = override_get_session
+    app.dependency_overrides[get_current_user] = override_get_current_user
+
+    with TestClient(app) as client:
+        yield client
+
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def unauthed_client():
+    app = FastAPI()
+    app.include_router(notes_router, prefix="/api/v1")
+    fake_db = AsyncMock()
+
+    async def override_get_session():
+        yield fake_db
+
+    app.dependency_overrides[get_session] = override_get_session
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        yield client
+
+    app.dependency_overrides.clear()
+
+
+# ── POST /notes/ ──────────────────────────────────────────────────────────────
+
+
+def test_create_note_success(app_client):
+    note = make_note()
+    with patch("app.api.v1.notes.create_note", new=AsyncMock(return_value=note)):
+        resp = app_client.post(
+            "/api/v1/notes/", json={"title": "Meeting notes"}
+        )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["title"] == "Meeting notes"
+    assert body["owner_id"] == str(OWNER_ID)
+
+
+def test_create_note_missing_title(app_client):
+    resp = app_client.post("/api/v1/notes/", json={"body": "Some text"})
+    assert resp.status_code == 422
+
+
+def test_create_note_unauthenticated(unauthed_client):
+    resp = unauthed_client.post("/api/v1/notes/", json={"title": "Secret"})
+    assert resp.status_code in (401, 422, 500)
+
+
+def test_create_note_with_all_fields(app_client):
+    note = make_note(
+        body="Detailed notes",
+        pinned=True,
+        person_id=PERSON_ID,
+        tags=[IMPORTANT_TERM],
+    )
+    with patch("app.api.v1.notes.create_note", new=AsyncMock(return_value=note)):
+        resp = app_client.post(
+            "/api/v1/notes/",
+            json={
+                "title": "Meeting notes",
+                "body": "Detailed notes",
+                "pinned": True,
+                "person_id": str(PERSON_ID),
+                "tags": ["important"],
+            },
+        )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["body"] == "Detailed notes"
+    assert body["pinned"] is True
+    assert body["person_id"] == str(PERSON_ID)
+    assert len(body["tags"]) == 1
+    assert body["tags"][0]["slug"] == "important"
+
+
+# ── GET /notes/ ───────────────────────────────────────────────────────────────
+
+
+def test_list_notes_returns_list(app_client):
+    notes = [make_note(), make_note(id=uuid.uuid4(), title="Other note")]
+    with patch("app.api.v1.notes.list_notes", new=AsyncMock(return_value=notes)):
+        resp = app_client.get("/api/v1/notes/")
+    assert resp.status_code == 200
+    assert len(resp.json()) == 2
+
+
+def test_list_notes_empty(app_client):
+    with patch("app.api.v1.notes.list_notes", new=AsyncMock(return_value=[])):
+        resp = app_client.get("/api/v1/notes/")
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_list_notes_pinned_filter(app_client):
+    with patch(
+        "app.api.v1.notes.list_notes", new=AsyncMock(return_value=[])
+    ) as mock_list:
+        resp = app_client.get("/api/v1/notes/?pinned=true")
+    assert resp.status_code == 200
+    call_kwargs = mock_list.call_args.kwargs
+    assert call_kwargs["pinned"] is True
+
+
+def test_list_notes_person_filter(app_client):
+    with patch(
+        "app.api.v1.notes.list_notes", new=AsyncMock(return_value=[])
+    ) as mock_list:
+        resp = app_client.get(f"/api/v1/notes/?person_id={PERSON_ID}")
+    assert resp.status_code == 200
+    call_kwargs = mock_list.call_args.kwargs
+    assert call_kwargs["person_id"] == PERSON_ID
+
+
+def test_list_notes_asset_filter(app_client):
+    with patch(
+        "app.api.v1.notes.list_notes", new=AsyncMock(return_value=[])
+    ) as mock_list:
+        resp = app_client.get(f"/api/v1/notes/?asset_id={ASSET_ID}")
+    assert resp.status_code == 200
+    call_kwargs = mock_list.call_args.kwargs
+    assert call_kwargs["asset_id"] == ASSET_ID
+
+
+# ── GET /notes/{note_id} ──────────────────────────────────────────────────────
+
+
+def test_get_note_found(app_client):
+    note = make_note()
+    with patch(
+        "app.api.v1.notes.get_note_public", new=AsyncMock(return_value=note)
+    ):
+        resp = app_client.get(f"/api/v1/notes/{NOTE_ID}")
+    assert resp.status_code == 200
+    assert resp.json()["id"] == str(NOTE_ID)
+
+
+def test_get_note_not_found(app_client):
+    with patch(
+        "app.api.v1.notes.get_note_public", new=AsyncMock(return_value=None)
+    ):
+        resp = app_client.get(f"/api/v1/notes/{uuid.uuid4()}")
+    assert resp.status_code == 404
+
+
+# ── PATCH /notes/{note_id} ────────────────────────────────────────────────────
+
+
+def test_patch_note_success(app_client):
+    updated = make_note(title="Updated title", pinned=True)
+    with patch(
+        "app.api.v1.notes.update_note", new=AsyncMock(return_value=updated)
+    ):
+        resp = app_client.patch(
+            f"/api/v1/notes/{NOTE_ID}",
+            json={"title": "Updated title", "pinned": True},
+        )
+    assert resp.status_code == 200
+    assert resp.json()["title"] == "Updated title"
+    assert resp.json()["pinned"] is True
+
+
+def test_patch_note_not_found(app_client):
+    with patch(
+        "app.api.v1.notes.update_note", new=AsyncMock(return_value=None)
+    ):
+        resp = app_client.patch(
+            f"/api/v1/notes/{uuid.uuid4()}", json={"title": "Ghost"}
+        )
+    assert resp.status_code == 404
+
+
+# ── DELETE /notes/{note_id} ───────────────────────────────────────────────────
+
+
+def test_delete_note_success(app_client):
+    with patch(
+        "app.api.v1.notes.soft_delete_note", new=AsyncMock(return_value=object())
+    ):
+        resp = app_client.delete(f"/api/v1/notes/{NOTE_ID}")
+    assert resp.status_code == 204
+
+
+def test_delete_note_not_found(app_client):
+    with patch(
+        "app.api.v1.notes.soft_delete_note", new=AsyncMock(return_value=None)
+    ):
+        resp = app_client.delete(f"/api/v1/notes/{uuid.uuid4()}")
+    assert resp.status_code == 404
