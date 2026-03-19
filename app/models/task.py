@@ -11,7 +11,7 @@ class Task(SQLModel, table=True):
     owner_id: uuid.UUID = Field(foreign_key="user.id", index=True)
     title: str
     description: str | None = None
-    status: str = "todo"      # todo | in_progress | done | cancelled | blocked
+    status: str = "todo"  # todo | in_progress | done | cancelled | blocked
     priority: str = "normal"  # low | normal | high | urgent
     due_date: date | None = None
     completed_at: datetime | None = None

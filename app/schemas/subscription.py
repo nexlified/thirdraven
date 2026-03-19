@@ -12,7 +12,8 @@ class SubscriptionCreate(BaseModel):
     category: str | None = None  # slug from "subscription-categories" vocabulary
     status: str = "active"
     cost: float
-    currency: str = "USD"
+    currency: str = "INR"
+    payment_mode: str = "manual"  # "auto_debit" | "manual"
     billing_cycle: str = "monthly"
     billing_cycle_days: int | None = None
     started_on: date | None = None
@@ -32,6 +33,7 @@ class SubscriptionUpdate(BaseModel):
     status: str | None = None
     cost: float | None = None
     currency: str | None = None
+    payment_mode: str | None = None
     billing_cycle: str | None = None
     billing_cycle_days: int | None = None
     started_on: date | None = None
@@ -54,6 +56,7 @@ class SubscriptionPublicRead(BaseModel):
     status: str
     cost: float
     currency: str
+    payment_mode: str
     billing_cycle: str
     billing_cycle_days: int | None
     started_on: date | None
@@ -76,7 +79,11 @@ class SubscriptionPublicRead(BaseModel):
 
 class BillPaymentCreate(BaseModel):
     amount: float
-    currency: str = "USD"
+    currency: str = "INR"
+    paid_amount: float | None = None
+    paid_currency: str = "INR"
+    exchange_rate: float | None = None
+    payment_mode: str | None = None  # None = inherit from subscription
     billing_date: date
     due_date: date | None = None
     paid_on: date | None = None
@@ -87,6 +94,10 @@ class BillPaymentCreate(BaseModel):
 class BillPaymentUpdate(BaseModel):
     amount: float | None = None
     currency: str | None = None
+    paid_amount: float | None = None
+    paid_currency: str | None = None
+    exchange_rate: float | None = None
+    payment_mode: str | None = None
     billing_date: date | None = None
     due_date: date | None = None
     paid_on: date | None = None
@@ -100,6 +111,10 @@ class BillPaymentPublicRead(BaseModel):
     owner_id: uuid.UUID
     amount: float
     currency: str
+    paid_amount: float | None
+    paid_currency: str
+    exchange_rate: float | None
+    payment_mode: str
     billing_date: date
     due_date: date | None
     paid_on: date | None
@@ -128,6 +143,6 @@ class CategorySpend(BaseModel):
 
 class SubscriptionSummary(BaseModel):
     total_active: int
-    total_monthly_cost: float
+    monthly_cost_by_currency: dict[str, float]  # e.g. {"INR": 1299.0, "USD": 15.99}
     upcoming_renewals: list[UpcomingRenewal]  # next 30 days
     cost_by_category: list[CategorySpend]

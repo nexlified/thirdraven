@@ -14,7 +14,8 @@ class Subscription(SQLModel, table=True):
     category_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
     status: str = "active"  # active | trial | paused | cancelled | expired
     cost: float
-    currency: str = "USD"
+    currency: str = "INR"
+    payment_mode: str = "manual"  # "auto_debit" | "manual"
     # daily | weekly | monthly | quarterly | semi_annual | annual | custom
     billing_cycle: str = "monthly"
     billing_cycle_days: int | None = None  # only for custom cycle
@@ -45,7 +46,11 @@ class BillPayment(SQLModel, table=True):
     subscription_id: uuid.UUID = Field(foreign_key="subscription.id", index=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id", index=True)
     amount: float
-    currency: str = "USD"
+    currency: str = "INR"
+    paid_amount: float | None = None
+    paid_currency: str = "INR"
+    exchange_rate: float | None = None
+    payment_mode: str = "manual"  # "auto_debit" | "manual"
     billing_date: date
     due_date: date | None = None
     paid_on: date | None = None

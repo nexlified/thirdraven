@@ -125,9 +125,9 @@ async def list_tasks(
         query = query.where(Task.subscription_id == subscription_id)
 
     result = await db.exec(
-        query.order_by(
-            Task.due_date.asc().nullslast(), Task.created_at.desc()
-        ).offset(skip).limit(limit)
+        query.order_by(Task.due_date.asc().nullslast(), Task.created_at.desc())
+        .offset(skip)
+        .limit(limit)
     )
     tasks = result.all()
     return [await _build_task_public(db, t) for t in tasks]

@@ -85,6 +85,7 @@ async def _build_public(db: AsyncSession, sub: Subscription) -> SubscriptionPubl
         status=sub.status,
         cost=sub.cost,
         currency=sub.currency,
+        payment_mode=sub.payment_mode,
         billing_cycle=sub.billing_cycle,
         billing_cycle_days=sub.billing_cycle_days,
         started_on=sub.started_on,
@@ -242,7 +243,10 @@ async def get_summary(db: AsyncSession, owner_id: uuid.UUID) -> SubscriptionSumm
     )
     active_subs = result.all()
 
-    total_monthly = sum(_monthly_cost(s) for s in active_subs)
+    monthly_by_currency: dict[str, float] = defaultdict(float)
+    for s in active_subs:
+        monthly_by_currency[s.currency] += _monthly_cost(s)
+    monthly_by_currency = {k: round(v, 2) for k, v in monthly_by_currency.items()}
 
     today = date.today()
     cutoff = today + timedelta(days=30)
@@ -268,7 +272,7 @@ async def get_summary(db: AsyncSession, owner_id: uuid.UUID) -> SubscriptionSumm
 
     return SubscriptionSummary(
         total_active=len(active_subs),
-        total_monthly_cost=round(total_monthly, 2),
+        monthly_cost_by_currency=monthly_by_currency,
         upcoming_renewals=upcoming,
         cost_by_category=[
             CategorySpend(category=k, monthly_cost=round(v, 2))
@@ -286,10 +290,14 @@ async def create_payment(
     owner_id: uuid.UUID,
     data: BillPaymentCreate,
 ) -> BillPaymentPublicRead:
+    payment_data = data.model_dump()
+    if payment_data.get("payment_mode") is None:
+        sub = await get_subscription(db, subscription_id, owner_id)
+        payment_data["payment_mode"] = sub.payment_mode if sub else "manual"
     payment = BillPayment(
         subscription_id=subscription_id,
         owner_id=owner_id,
-        **data.model_dump(),
+        **payment_data,
     )
     db.add(payment)
     await db.commit()
