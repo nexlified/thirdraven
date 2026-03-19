@@ -22,7 +22,7 @@ async def resolve_term_slug(
 
     Raises HTTP 422 if not found.
     """
-    result = await db.exec(
+    result = await db.execute(
         select(Term)
         .join(Vocabulary, Term.vocabulary_id == Vocabulary.id)
         .where(
@@ -31,7 +31,7 @@ async def resolve_term_slug(
             Term.is_active.is_(True),
         )
     )
-    term = result.first()
+    term = result.scalars().first()
     if not term:
         raise HTTPException(
             status_code=422,
@@ -55,13 +55,13 @@ async def resolve_optional_term_slug(
 async def list_vocabularies(
     db: AsyncSession, skip: int = 0, limit: int = 100
 ) -> list[Vocabulary]:
-    result = await db.exec(
+    result = await db.execute(
         select(Vocabulary)
         .where(Vocabulary.is_active.is_(True))
         .offset(skip)
         .limit(limit)
     )
-    return list(result.all())
+    return list(result.scalars().all())
 
 
 async def create_vocabulary(db: AsyncSession, data: VocabularyCreate) -> Vocabulary:
@@ -75,10 +75,10 @@ async def create_vocabulary(db: AsyncSession, data: VocabularyCreate) -> Vocabul
 async def get_vocabulary_by_machine_name(
     db: AsyncSession, machine_name: str
 ) -> Vocabulary | None:
-    result = await db.exec(
+    result = await db.execute(
         select(Vocabulary).where(Vocabulary.machine_name == machine_name)
     )
-    return result.first()
+    return result.scalars().first()
 
 
 async def update_vocabulary(
@@ -128,13 +128,13 @@ async def list_terms(
         Term.is_active.is_(True),
     )
     if parent_slug is not None:
-        parent_result = await db.exec(
+        parent_result = await db.execute(
             select(Term).where(
                 Term.vocabulary_id == vocab.id,
                 Term.slug == parent_slug,
             )
         )
-        parent = parent_result.first()
+        parent = parent_result.scalars().first()
         if parent:
             query = query.where(Term.parent_id == parent.id)
         else:
@@ -142,8 +142,8 @@ async def list_terms(
     if search:
         query = query.where(Term.name.ilike(f"%{search}%"))
     query = query.order_by(Term.weight, Term.name)
-    result = await db.exec(query.offset(skip).limit(limit))
-    return list(result.all())
+    result = await db.execute(query.offset(skip).limit(limit))
+    return list(result.scalars().all())
 
 
 async def create_term(db: AsyncSession, machine_name: str, data: TermCreate) -> Term:
@@ -172,7 +172,7 @@ async def create_term(db: AsyncSession, machine_name: str, data: TermCreate) -> 
 async def get_term_by_slug(
     db: AsyncSession, machine_name: str, slug: str
 ) -> Term | None:
-    result = await db.exec(
+    result = await db.execute(
         select(Term)
         .join(Vocabulary, Term.vocabulary_id == Vocabulary.id)
         .where(
@@ -180,7 +180,7 @@ async def get_term_by_slug(
             Term.slug == slug,
         )
     )
-    return result.first()
+    return result.scalars().first()
 
 
 async def update_term(

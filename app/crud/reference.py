@@ -24,20 +24,20 @@ async def add_person_term(
 
 
 async def list_person_terms(db: AsyncSession, person_id: uuid.UUID) -> list[PersonTerm]:
-    result = await db.exec(select(PersonTerm).where(PersonTerm.person_id == person_id))
-    return list(result.all())
+    result = await db.execute(select(PersonTerm).where(PersonTerm.person_id == person_id))
+    return list(result.scalars().all())
 
 
 async def remove_person_term(
     db: AsyncSession, person_id: uuid.UUID, term_id: uuid.UUID
 ) -> bool:
-    result = await db.exec(
+    result = await db.execute(
         select(PersonTerm).where(
             PersonTerm.person_id == person_id,
             PersonTerm.term_id == term_id,
         )
     )
-    pt = result.first()
+    pt = result.scalars().first()
     if not pt:
         return False
     await db.delete(pt)

@@ -38,7 +38,7 @@ _CYCLE_TO_MONTHLY: dict[str, float] = {
 async def _get_subscription_tags(
     db: AsyncSession, subscription_id: uuid.UUID
 ) -> list[TermSlim]:
-    result = await db.exec(
+    result = await db.execute(
         select(Term)
         .join(SubscriptionTag, Term.id == SubscriptionTag.term_id)
         .where(
@@ -47,18 +47,18 @@ async def _get_subscription_tags(
         )
         .order_by(Term.name)
     )
-    return [TermSlim.model_validate(t) for t in result.all()]
+    return [TermSlim.model_validate(t) for t in result.scalars().all()]
 
 
 async def _set_subscription_tags(
     db: AsyncSession, subscription_id: uuid.UUID, tag_slugs: list[str]
 ) -> None:
-    existing = await db.exec(
+    existing = await db.execute(
         select(SubscriptionTag).where(
             SubscriptionTag.subscription_id == subscription_id
         )
     )
-    for row in existing.all():
+    for row in existing.scalars().all():
         await db.delete(row)
     for slug in tag_slugs:
         term_id = await resolve_term_slug(db, "subscription-tags", slug)
@@ -68,8 +68,8 @@ async def _set_subscription_tags(
 async def _get_term(db: AsyncSession, term_id: uuid.UUID | None) -> TermSlim | None:
     if term_id is None:
         return None
-    result = await db.exec(select(Term).where(Term.id == term_id))
-    t = result.first()
+    result = await db.execute(select(Term).where(Term.id == term_id))
+    t = result.scalars().first()
     return TermSlim.model_validate(t) if t else None
 
 
@@ -140,14 +140,14 @@ async def create_subscription(
 async def get_subscription(
     db: AsyncSession, subscription_id: uuid.UUID, owner_id: uuid.UUID
 ) -> Subscription | None:
-    result = await db.exec(
+    result = await db.execute(
         select(Subscription).where(
             Subscription.id == subscription_id,
             Subscription.owner_id == owner_id,
             Subscription.deleted_at.is_(None),
         )
     )
-    return result.first()
+    return result.scalars().first()
 
 
 async def get_subscription_public(
@@ -183,8 +183,8 @@ async def list_subscriptions(
         )
         query = query.where(Subscription.category_term_id == cat_id)
 
-    result = await db.exec(query.offset(skip).limit(limit))
-    return [await _build_public(db, s) for s in result.all()]
+    result = await db.execute(query.offset(skip).limit(limit))
+    return [await _build_public(db, s) for s in result.scalars().all()]
 
 
 async def update_subscription(
@@ -234,14 +234,14 @@ async def soft_delete_subscription(
 
 
 async def get_summary(db: AsyncSession, owner_id: uuid.UUID) -> SubscriptionSummary:
-    result = await db.exec(
+    result = await db.execute(
         select(Subscription).where(
             Subscription.owner_id == owner_id,
             Subscription.deleted_at.is_(None),
             Subscription.status == "active",
         )
     )
-    active_subs = result.all()
+    active_subs = result.scalars().all()
 
     monthly_by_currency: dict[str, float] = defaultdict(float)
     for s in active_subs:
@@ -312,7 +312,7 @@ async def list_payments(
     skip: int = 0,
     limit: int = 50,
 ) -> list[BillPaymentPublicRead]:
-    result = await db.exec(
+    result = await db.execute(
         select(BillPayment)
         .where(
             BillPayment.subscription_id == subscription_id,
@@ -322,7 +322,7 @@ async def list_payments(
         .offset(skip)
         .limit(limit)
     )
-    return [BillPaymentPublicRead.model_validate(p) for p in result.all()]
+    return [BillPaymentPublicRead.model_validate(p) for p in result.scalars().all()]
 
 
 async def get_payment(
@@ -331,14 +331,14 @@ async def get_payment(
     payment_id: uuid.UUID,
     owner_id: uuid.UUID,
 ) -> BillPayment | None:
-    result = await db.exec(
+    result = await db.execute(
         select(BillPayment).where(
             BillPayment.id == payment_id,
             BillPayment.subscription_id == subscription_id,
             BillPayment.owner_id == owner_id,
         )
     )
-    return result.first()
+    return result.scalars().first()
 
 
 async def update_payment(

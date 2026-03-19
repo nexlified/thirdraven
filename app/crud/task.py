@@ -16,20 +16,20 @@ _DONE_STATUSES = {"done", "cancelled"}
 
 
 async def _get_task_tags(db: AsyncSession, task_id: uuid.UUID) -> list[TermSlim]:
-    result = await db.exec(
+    result = await db.execute(
         select(Term)
         .join(TaskTag, Term.id == TaskTag.term_id)
         .where(TaskTag.task_id == task_id, Term.is_active.is_(True))
         .order_by(Term.name)
     )
-    return [TermSlim.model_validate(t) for t in result.all()]
+    return [TermSlim.model_validate(t) for t in result.scalars().all()]
 
 
 async def _set_task_tags(
     db: AsyncSession, task_id: uuid.UUID, tag_slugs: list[str]
 ) -> None:
-    existing = await db.exec(select(TaskTag).where(TaskTag.task_id == task_id))
-    for row in existing.all():
+    existing = await db.execute(select(TaskTag).where(TaskTag.task_id == task_id))
+    for row in existing.scalars().all():
         await db.delete(row)
     for slug in tag_slugs:
         term_id = await resolve_term_slug(db, "task-tags", slug)
@@ -81,14 +81,14 @@ async def create_task(
 async def get_task(
     db: AsyncSession, task_id: uuid.UUID, owner_id: uuid.UUID
 ) -> Task | None:
-    result = await db.exec(
+    result = await db.execute(
         select(Task).where(
             Task.id == task_id,
             Task.owner_id == owner_id,
             Task.deleted_at.is_(None),
         )
     )
-    return result.first()
+    return result.scalars().first()
 
 
 async def get_task_public(
@@ -124,12 +124,12 @@ async def list_tasks(
     if subscription_id is not None:
         query = query.where(Task.subscription_id == subscription_id)
 
-    result = await db.exec(
+    result = await db.execute(
         query.order_by(Task.due_date.asc().nullslast(), Task.created_at.desc())
         .offset(skip)
         .limit(limit)
     )
-    tasks = result.all()
+    tasks = result.scalars().all()
     return [await _build_task_public(db, t) for t in tasks]
 
 
@@ -178,10 +178,10 @@ async def soft_delete_task(
 
 
 async def get_task_summary(db: AsyncSession, owner_id: uuid.UUID) -> TaskSummary:
-    result = await db.exec(
+    result = await db.execute(
         select(Task).where(Task.owner_id == owner_id, Task.deleted_at.is_(None))
     )
-    tasks = result.all()
+    tasks = result.scalars().all()
 
     by_status: dict[str, int] = {}
     overdue = 0

@@ -14,20 +14,20 @@ from app.schemas.vocabulary import TermSlim
 
 
 async def _get_asset_tags(db: AsyncSession, asset_id: uuid.UUID) -> list[TermSlim]:
-    result = await db.exec(
+    result = await db.execute(
         select(Term)
         .join(AssetTag, Term.id == AssetTag.term_id)
         .where(AssetTag.asset_id == asset_id, Term.is_active.is_(True))
         .order_by(Term.name)
     )
-    return [TermSlim.model_validate(t) for t in result.all()]
+    return [TermSlim.model_validate(t) for t in result.scalars().all()]
 
 
 async def _set_asset_tags(
     db: AsyncSession, asset_id: uuid.UUID, tag_slugs: list[str]
 ) -> None:
-    existing = await db.exec(select(AssetTag).where(AssetTag.asset_id == asset_id))
-    for row in existing.all():
+    existing = await db.execute(select(AssetTag).where(AssetTag.asset_id == asset_id))
+    for row in existing.scalars().all():
         await db.delete(row)
     for slug in tag_slugs:
         term_id = await resolve_term_slug(db, "asset-tags", slug)
@@ -35,8 +35,8 @@ async def _set_asset_tags(
 
 
 async def _get_term(db: AsyncSession, term_id: uuid.UUID) -> TermSlim | None:
-    result = await db.exec(select(Term).where(Term.id == term_id))
-    t = result.first()
+    result = await db.execute(select(Term).where(Term.id == term_id))
+    t = result.scalars().first()
     return TermSlim.model_validate(t) if t else None
 
 
@@ -98,14 +98,14 @@ async def create_asset(
 async def get_asset(
     db: AsyncSession, asset_id: uuid.UUID, owner_id: uuid.UUID
 ) -> Asset | None:
-    result = await db.exec(
+    result = await db.execute(
         select(Asset).where(
             Asset.id == asset_id,
             Asset.owner_id == owner_id,
             Asset.deleted_at.is_(None),
         )
     )
-    return result.first()
+    return result.scalars().first()
 
 
 async def get_asset_public(
@@ -135,8 +135,8 @@ async def list_assets(
         stat_id = await resolve_term_slug(db, "asset-statuses", status)
         query = query.where(Asset.status_term_id == stat_id)
 
-    result = await db.exec(query.offset(skip).limit(limit))
-    assets = result.all()
+    result = await db.execute(query.offset(skip).limit(limit))
+    assets = result.scalars().all()
     return [await _build_asset_public(db, a) for a in assets]
 
 

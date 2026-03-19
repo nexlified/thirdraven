@@ -143,21 +143,23 @@ async def _resolve_location_fields(db: AsyncSession, raw: dict) -> dict:
 
 
 async def _get_person_tags(db: AsyncSession, person_id: uuid.UUID) -> list[TermSlim]:
-    result = await db.exec(
+    result = await db.execute(
         select(Term)
         .join(PersonTag, Term.id == PersonTag.term_id)
         .where(PersonTag.person_id == person_id, Term.is_active.is_(True))
         .order_by(Term.name)
     )
-    return [TermSlim.model_validate(t) for t in result.all()]
+    return [TermSlim.model_validate(t) for t in result.scalars().all()]
 
 
 async def _set_person_tags(
     db: AsyncSession, person_id: uuid.UUID, tag_slugs: list[str]
 ) -> None:
     """Replace all tags for a person."""
-    existing = await db.exec(select(PersonTag).where(PersonTag.person_id == person_id))
-    for row in existing.all():
+    existing = await db.execute(
+        select(PersonTag).where(PersonTag.person_id == person_id)
+    )
+    for row in existing.scalars().all():
         await db.delete(row)
     for slug in tag_slugs:
         term_id = await resolve_term_slug(db, "person-tags", slug)
@@ -167,23 +169,23 @@ async def _set_person_tags(
 async def _get_person_languages(
     db: AsyncSession, person_id: uuid.UUID
 ) -> list[LanguageSlim]:
-    result = await db.exec(
+    result = await db.execute(
         select(Language)
         .join(PersonLanguage, Language.id == PersonLanguage.language_id)
         .where(PersonLanguage.person_id == person_id, Language.is_active.is_(True))
         .order_by(Language.name)
     )
-    return [LanguageSlim.model_validate(lang) for lang in result.all()]
+    return [LanguageSlim.model_validate(lang) for lang in result.scalars().all()]
 
 
 async def _set_person_languages(
     db: AsyncSession, person_id: uuid.UUID, codes: list[str]
 ) -> None:
     """Replace all languages for a person."""
-    existing = await db.exec(
+    existing = await db.execute(
         select(PersonLanguage).where(PersonLanguage.person_id == person_id)
     )
-    for row in existing.all():
+    for row in existing.scalars().all():
         await db.delete(row)
     for code in codes:
         lang_id = await resolve_language_code(db, code)
@@ -220,24 +222,24 @@ async def _build_profile_section(
 ) -> PersonProfileSection:
     prefix = None
     if row.prefix_term_id:
-        r = await db.exec(select(Term).where(Term.id == row.prefix_term_id))
-        t = r.first()
+        r = await db.execute(select(Term).where(Term.id == row.prefix_term_id))
+        t = r.scalars().first()
         if t:
             prefix = TermSlim.model_validate(t)
 
     gender = None
     if row.gender_term_id:
-        r = await db.exec(select(Term).where(Term.id == row.gender_term_id))
-        t = r.first()
+        r = await db.execute(select(Term).where(Term.id == row.gender_term_id))
+        t = r.scalars().first()
         if t:
             gender = TermSlim.model_validate(t)
 
     nationality = None
     if row.nationality_country_id:
-        r = await db.exec(
+        r = await db.execute(
             select(Country).where(Country.id == row.nationality_country_id)
         )
-        c = r.first()
+        c = r.scalars().first()
         if c:
             nationality = CountrySlim.model_validate(c)
 
@@ -258,8 +260,8 @@ async def _build_professional_section(
 ) -> PersonProfessionalSection:
     occupation = None
     if row.occupation_term_id:
-        r = await db.exec(select(Term).where(Term.id == row.occupation_term_id))
-        t = r.first()
+        r = await db.execute(select(Term).where(Term.id == row.occupation_term_id))
+        t = r.scalars().first()
         if t:
             occupation = TermSlim.model_validate(t)
 
@@ -277,15 +279,15 @@ async def _build_location_section(
 ) -> PersonLocationSection:
     country = None
     if row.country_id:
-        r = await db.exec(select(Country).where(Country.id == row.country_id))
-        c = r.first()
+        r = await db.execute(select(Country).where(Country.id == row.country_id))
+        c = r.scalars().first()
         if c:
             country = CountrySlim.model_validate(c)
 
     timezone = None
     if row.timezone_id:
-        r = await db.exec(select(Timezone).where(Timezone.id == row.timezone_id))
-        tz = r.first()
+        r = await db.execute(select(Timezone).where(Timezone.id == row.timezone_id))
+        tz = r.scalars().first()
         if tz:
             timezone = TimezonePublic.model_validate(tz)
 
@@ -356,14 +358,14 @@ async def get_person(
     owner_id: uuid.UUID,
     include: list[str] | None = None,
 ) -> PersonExtended | None:
-    result = await db.exec(
+    result = await db.execute(
         select(Person).where(
             Person.id == person_id,
             Person.owner_id == owner_id,
             Person.deleted_at.is_(None),
         )
     )
-    person = result.first()
+    person = result.scalars().first()
     if not person:
         return None
 
@@ -374,44 +376,44 @@ async def get_person(
         all_requested = "all" in include
 
         if all_requested or "profile" in include:
-            r = await db.exec(
+            r = await db.execute(
                 select(PersonProfile).where(PersonProfile.person_id == person_id)
             )
-            row = r.first()
+            row = r.scalars().first()
             if row:
                 sections["profile"] = await _build_profile_section(db, person_id, row)
 
         if all_requested or "professional" in include:
-            r = await db.exec(
+            r = await db.execute(
                 select(PersonProfessional).where(
                     PersonProfessional.person_id == person_id
                 )
             )
-            row = r.first()
+            row = r.scalars().first()
             if row:
                 sections["professional"] = await _build_professional_section(db, row)
 
         if all_requested or "social" in include:
-            r = await db.exec(
+            r = await db.execute(
                 select(PersonSocial).where(PersonSocial.person_id == person_id)
             )
-            row = r.first()
+            row = r.scalars().first()
             if row:
                 sections["social"] = PersonSocialSection.model_validate(row)
 
         if all_requested or "location" in include:
-            r = await db.exec(
+            r = await db.execute(
                 select(PersonLocation).where(PersonLocation.person_id == person_id)
             )
-            row = r.first()
+            row = r.scalars().first()
             if row:
                 sections["location"] = await _build_location_section(db, row)
 
         if all_requested or "context" in include:
-            r = await db.exec(
+            r = await db.execute(
                 select(PersonContext).where(PersonContext.person_id == person_id)
             )
-            row = r.first()
+            row = r.scalars().first()
             if row:
                 sections["context"] = PersonContextSection.model_validate(row)
 
@@ -421,13 +423,13 @@ async def get_person(
 async def list_persons(
     db: AsyncSession, owner_id: uuid.UUID, skip: int = 0, limit: int = 50
 ) -> list[PersonSlim]:
-    result = await db.exec(
+    result = await db.execute(
         select(Person)
         .where(Person.owner_id == owner_id, Person.deleted_at.is_(None))
         .offset(skip)
         .limit(limit)
     )
-    persons = result.all()
+    persons = result.scalars().all()
     return [await _build_person_slim(db, p) for p in persons]
 
 
@@ -438,14 +440,14 @@ async def update_person(
     data: PersonUpdate,
     include: list[str] | None = None,
 ) -> PersonExtended | None:
-    result = await db.exec(
+    result = await db.execute(
         select(Person).where(
             Person.id == person_id,
             Person.owner_id == owner_id,
             Person.deleted_at.is_(None),
         )
     )
-    person = result.first()
+    person = result.scalars().first()
     if not person:
         return None
 
@@ -473,10 +475,10 @@ async def update_person(
     ]:
         if ext_raw:
             ext_db = await resolver(db, ext_raw)
-            row_result = await db.exec(
+            row_result = await db.execute(
                 select(ext_cls).where(ext_cls.person_id == person_id)
             )
-            ext_row = row_result.first()
+            ext_row = row_result.scalars().first()
             if ext_row:
                 for field, value in ext_db.items():
                     setattr(ext_row, field, value)
@@ -490,10 +492,10 @@ async def update_person(
         (context_raw, PersonContext),
     ]:
         if ext_raw:
-            row_result = await db.exec(
+            row_result = await db.execute(
                 select(ext_cls).where(ext_cls.person_id == person_id)
             )
-            ext_row = row_result.first()
+            ext_row = row_result.scalars().first()
             if ext_row:
                 for field, value in ext_raw.items():
                     setattr(ext_row, field, value)
@@ -516,14 +518,14 @@ async def update_person(
 async def soft_delete_person(
     db: AsyncSession, person_id: uuid.UUID, owner_id: uuid.UUID
 ) -> Person | None:
-    result = await db.exec(
+    result = await db.execute(
         select(Person).where(
             Person.id == person_id,
             Person.owner_id == owner_id,
             Person.deleted_at.is_(None),
         )
     )
-    person = result.first()
+    person = result.scalars().first()
     if not person:
         return None
     person.deleted_at = datetime.utcnow()
@@ -554,7 +556,7 @@ async def add_relationship(
 async def get_relationships_for_person(
     db: AsyncSession, person_id: uuid.UUID
 ) -> list[PersonRelationship]:
-    result = await db.exec(
+    result = await db.execute(
         select(PersonRelationship).where(PersonRelationship.from_person_id == person_id)
     )
-    return list(result.all())
+    return list(result.scalars().all())

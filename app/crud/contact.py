@@ -22,26 +22,26 @@ async def create_contact(
 async def get_contact(
     db: AsyncSession, contact_id: uuid.UUID, owner_id: uuid.UUID
 ) -> Contact | None:
-    result = await db.exec(
+    result = await db.execute(
         select(Contact).where(
             Contact.id == contact_id,
             Contact.owner_id == owner_id,
             Contact.deleted_at.is_(None),
         )
     )
-    return result.first()
+    return result.scalars().first()
 
 
 async def list_contacts(
     db: AsyncSession, owner_id: uuid.UUID, skip: int = 0, limit: int = 50
 ) -> list[Contact]:
-    result = await db.exec(
+    result = await db.execute(
         select(Contact)
         .where(Contact.owner_id == owner_id, Contact.deleted_at.is_(None))
         .offset(skip)
         .limit(limit)
     )
-    return list(result.all())
+    return list(result.scalars().all())
 
 
 async def update_contact(
@@ -91,9 +91,9 @@ async def add_relationship(
 async def get_relationships_for_contact(
     db: AsyncSession, contact_id: uuid.UUID
 ) -> list[ContactRelationship]:
-    result = await db.exec(
+    result = await db.execute(
         select(ContactRelationship).where(
             ContactRelationship.from_contact_id == contact_id
         )
     )
-    return list(result.all())
+    return list(result.scalars().all())

@@ -29,13 +29,13 @@ async def create_interaction(
 async def get_interaction(
     db: AsyncSession, interaction_id: uuid.UUID, owner_id: uuid.UUID
 ) -> Interaction | None:
-    result = await db.exec(
+    result = await db.execute(
         select(Interaction).where(
             Interaction.id == interaction_id,
             Interaction.owner_id == owner_id,
         )
     )
-    return result.first()
+    return result.scalars().first()
 
 
 async def list_interactions(
@@ -56,8 +56,8 @@ async def list_interactions(
             Interaction.interaction_type_id == Term.id,
         ).where(Term.slug == type_slug)
     query = query.offset(skip).limit(limit)
-    result = await db.exec(query)
-    return list(result.all())
+    result = await db.execute(query)
+    return list(result.scalars().all())
 
 
 async def update_interaction(

@@ -14,20 +14,20 @@ from app.schemas.vocabulary import TermSlim
 
 
 async def _get_note_tags(db: AsyncSession, note_id: uuid.UUID) -> list[TermSlim]:
-    result = await db.exec(
+    result = await db.execute(
         select(Term)
         .join(NoteTag, Term.id == NoteTag.term_id)
         .where(NoteTag.note_id == note_id, Term.is_active.is_(True))
         .order_by(Term.name)
     )
-    return [TermSlim.model_validate(t) for t in result.all()]
+    return [TermSlim.model_validate(t) for t in result.scalars().all()]
 
 
 async def _set_note_tags(
     db: AsyncSession, note_id: uuid.UUID, tag_slugs: list[str]
 ) -> None:
-    existing = await db.exec(select(NoteTag).where(NoteTag.note_id == note_id))
-    for row in existing.all():
+    existing = await db.execute(select(NoteTag).where(NoteTag.note_id == note_id))
+    for row in existing.scalars().all():
         await db.delete(row)
     for slug in tag_slugs:
         term_id = await resolve_term_slug(db, "note-tags", slug)
@@ -76,14 +76,14 @@ async def create_note(
 async def get_note(
     db: AsyncSession, note_id: uuid.UUID, owner_id: uuid.UUID
 ) -> Note | None:
-    result = await db.exec(
+    result = await db.execute(
         select(Note).where(
             Note.id == note_id,
             Note.owner_id == owner_id,
             Note.deleted_at.is_(None),
         )
     )
-    return result.first()
+    return result.scalars().first()
 
 
 async def get_note_public(
@@ -116,10 +116,10 @@ async def list_notes(
     if subscription_id is not None:
         query = query.where(Note.subscription_id == subscription_id)
 
-    result = await db.exec(
+    result = await db.execute(
         query.order_by(Note.updated_at.desc()).offset(skip).limit(limit)
     )
-    notes = result.all()
+    notes = result.scalars().all()
     return [await _build_note_public(db, n) for n in notes]
 
 
