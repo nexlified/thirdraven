@@ -6,11 +6,22 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlmodel import SQLModel
 
+import app.models.asset  # noqa: F401
 import app.models.contact  # noqa: F401
+import app.models.interaction  # noqa: F401
+import app.models.iso_reference  # noqa: F401
+import app.models.note  # noqa: F401
+import app.models.person  # noqa: F401
+import app.models.person_extensions  # noqa: F401
+import app.models.person_relationship  # noqa: F401
+import app.models.reference  # noqa: F401
 import app.models.relationship  # noqa: F401
 
-# Import all models so SQLModel.metadata is populated
+# Import all models so SQLModel.metadata is fully populated
+import app.models.subscription  # noqa: F401
+import app.models.task  # noqa: F401
 import app.models.user  # noqa: F401
+import app.models.vocabulary  # noqa: F401
 from app.core.config import get_settings
 
 config = context.config
@@ -20,9 +31,7 @@ if config.config_file_name is not None:
 
 settings = get_settings()
 
-# Use psycopg2 sync driver for Alembic
-sync_url = settings.database_url.replace("+asyncpg", "+psycopg2")
-config.set_main_option("sqlalchemy.url", sync_url)
+config.set_main_option("sqlalchemy.url", settings.database_url)
 
 target_metadata = SQLModel.metadata
 

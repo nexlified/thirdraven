@@ -81,9 +81,7 @@ async def add_relationship(
     label: str,
     owner_id: uuid.UUID,
 ) -> ContactRelationship:
-    rel = ContactRelationship(
-        from_contact_id=from_id, to_contact_id=to_id, label=label
-    )
+    rel = ContactRelationship(from_contact_id=from_id, to_contact_id=to_id, label=label)
     db.add(rel)
     await db.commit()
     await db.refresh(rel)
