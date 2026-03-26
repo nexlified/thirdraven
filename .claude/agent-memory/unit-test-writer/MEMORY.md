@@ -1,0 +1,1 @@
+- [ThirdRaven testing conventions](project_testing_conventions.md) — fixture pattern, mock strategy, factory fn style, file naming for this project

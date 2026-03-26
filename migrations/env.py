@@ -18,8 +18,11 @@ import app.models.reference  # noqa: F401
 import app.models.relationship  # noqa: F401
 
 # Import all models so SQLModel.metadata is fully populated
+import app.models.communication  # noqa: F401
+import app.models.document  # noqa: F401
 import app.models.subscription  # noqa: F401
 import app.models.task  # noqa: F401
+import app.models.tracked_record  # noqa: F401
 import app.models.user  # noqa: F401
 import app.models.vocabulary  # noqa: F401
 from app.core.config import get_settings

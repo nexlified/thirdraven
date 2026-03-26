@@ -17,6 +17,15 @@ class AssetCreate(BaseModel):
     purchase_price: float | None = None
     current_value: float | None = None
     tags: list[str] = []  # slugs from "asset-tags" vocabulary
+    brand: str | None = None
+    model_number: str | None = None
+    color: str | None = None
+    condition: str | None = None
+    location_note: str | None = None
+    barcode: str | None = None
+    image_url: str | None = None
+    purchase_url: str | None = None
+    purchase_currency: str | None = None
     notes: str | None = None
 
 
@@ -31,6 +40,15 @@ class AssetUpdate(BaseModel):
     purchase_price: float | None = None
     current_value: float | None = None
     tags: list[str] | None = None
+    brand: str | None = None
+    model_number: str | None = None
+    color: str | None = None
+    condition: str | None = None
+    location_note: str | None = None
+    barcode: str | None = None
+    image_url: str | None = None
+    purchase_url: str | None = None
+    purchase_currency: str | None = None
     notes: str | None = None
 
 
@@ -47,6 +65,15 @@ class AssetPublicRead(BaseModel):
     purchase_price: float | None
     current_value: float | None
     tags: list[TermSlim]
+    brand: str | None = None
+    model_number: str | None = None
+    color: str | None = None
+    condition: str | None = None
+    location_note: str | None = None
+    barcode: str | None = None
+    image_url: str | None = None
+    purchase_url: str | None = None
+    purchase_currency: str | None = None
     notes: str | None
     created_at: datetime
     updated_at: datetime
