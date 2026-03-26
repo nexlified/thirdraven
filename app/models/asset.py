@@ -7,7 +7,7 @@ from sqlmodel import Field, SQLModel
 class Asset(SQLModel, table=True):
     __tablename__ = "asset"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id", index=True)
     name: str
     category_term_id: uuid.UUID = Field(foreign_key="term.id")

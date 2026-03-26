@@ -9,7 +9,7 @@ from sqlmodel import Field, SQLModel
 class Interaction(SQLModel, table=True):
     __tablename__ = "interaction"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", index=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id", index=True)
     interaction_type_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")

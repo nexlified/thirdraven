@@ -7,7 +7,7 @@ from sqlmodel import Field, SQLModel
 class PersonProfile(SQLModel, table=True):
     __tablename__ = "person_profile"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -23,7 +23,7 @@ class PersonProfile(SQLModel, table=True):
 class PersonProfessional(SQLModel, table=True):
     __tablename__ = "person_professional"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -37,19 +37,23 @@ class PersonProfessional(SQLModel, table=True):
 class PersonSocial(SQLModel, table=True):
     __tablename__ = "person_social"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     twitter_handle: str | None = None
     instagram_handle: str | None = None
     website_url: str | None = None
+    facebook_url: str | None = None
+    github_handle: str | None = None
+    discord_handle: str | None = None
+    telegram_handle: str | None = None
 
 
 class PersonLocation(SQLModel, table=True):
     __tablename__ = "person_location"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -63,9 +67,43 @@ class PersonLocation(SQLModel, table=True):
 class PersonContext(SQLModel, table=True):
     __tablename__ = "person_context"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     how_we_met: str | None = None
     first_met_on: date | None = None
+    last_contacted_on: date | None = None
+    contact_frequency_days: int | None = None
+    preferred_contact_term_id: uuid.UUID | None = Field(
+        default=None, foreign_key="term.id"
+    )
+
+
+class PersonPhysical(SQLModel, table=True):
+    __tablename__ = "person_physical"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
+    person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    height_cm: float | None = None
+    eye_color_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
+    hair_color_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
+    blood_type: str | None = None
+
+
+class PersonPersonality(SQLModel, table=True):
+    __tablename__ = "person_personality"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
+    person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    interests: str | None = None
+    food_preferences: str | None = None
+    dietary_restrictions: str | None = None
+    personality_notes: str | None = None
+    communication_style_term_id: uuid.UUID | None = Field(
+        default=None, foreign_key="term.id"
+    )

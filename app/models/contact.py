@@ -8,7 +8,7 @@ from sqlmodel import Field, SQLModel
 class Contact(SQLModel, table=True):
     __tablename__ = "contact"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id", index=True)
     first_name: str
     last_name: str | None = None

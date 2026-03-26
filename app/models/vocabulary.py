@@ -9,7 +9,7 @@ from sqlmodel import Field, SQLModel
 class Vocabulary(SQLModel, table=True):
     __tablename__ = "vocabulary"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     name: str
     machine_name: str = Field(index=True, unique=True)
     description: str | None = None
@@ -26,7 +26,7 @@ class Term(SQLModel, table=True):
     __tablename__ = "term"
     __table_args__ = (UniqueConstraint("vocabulary_id", "slug"),)
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     vocabulary_id: uuid.UUID = Field(foreign_key="vocabulary.id", index=True)
     name: str
     slug: str = Field(index=True)

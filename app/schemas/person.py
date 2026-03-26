@@ -51,6 +51,10 @@ class PersonCreate(BaseModel):
     twitter_handle: str | None = None
     instagram_handle: str | None = None
     website_url: str | None = None
+    facebook_url: str | None = None
+    github_handle: str | None = None
+    discord_handle: str | None = None
+    telegram_handle: str | None = None
     # location section
     address_home: str | None = None
     address_work: str | None = None
@@ -60,6 +64,20 @@ class PersonCreate(BaseModel):
     # context section
     how_we_met: str | None = None
     first_met_on: date | None = None
+    last_contacted_on: date | None = None
+    contact_frequency_days: int | None = None
+    preferred_contact: str | None = None  # slug from "contact-channels"
+    # physical section
+    height_cm: float | None = None
+    eye_color: str | None = None  # slug from "eye-colors"
+    hair_color: str | None = None  # slug from "hair-colors"
+    blood_type: str | None = None
+    # personality section
+    interests: str | None = None
+    food_preferences: str | None = None
+    dietary_restrictions: str | None = None
+    personality_notes: str | None = None
+    communication_style: str | None = None  # slug from "communication-styles"
 
 
 class PersonUpdate(BaseModel):
@@ -88,6 +106,10 @@ class PersonUpdate(BaseModel):
     twitter_handle: str | None = None
     instagram_handle: str | None = None
     website_url: str | None = None
+    facebook_url: str | None = None
+    github_handle: str | None = None
+    discord_handle: str | None = None
+    telegram_handle: str | None = None
     # location section
     address_home: str | None = None
     address_work: str | None = None
@@ -97,6 +119,20 @@ class PersonUpdate(BaseModel):
     # context section
     how_we_met: str | None = None
     first_met_on: date | None = None
+    last_contacted_on: date | None = None
+    contact_frequency_days: int | None = None
+    preferred_contact: str | None = None
+    # physical section
+    height_cm: float | None = None
+    eye_color: str | None = None
+    hair_color: str | None = None
+    blood_type: str | None = None
+    # personality section
+    interests: str | None = None
+    food_preferences: str | None = None
+    dietary_restrictions: str | None = None
+    personality_notes: str | None = None
+    communication_style: str | None = None
 
 
 # ── Response schemas ───────────────────────────────────────────────────────────
@@ -149,6 +185,10 @@ class PersonSocialSection(BaseModel):
     twitter_handle: str | None = None
     instagram_handle: str | None = None
     website_url: str | None = None
+    facebook_url: str | None = None
+    github_handle: str | None = None
+    discord_handle: str | None = None
+    telegram_handle: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -166,6 +206,28 @@ class PersonLocationSection(BaseModel):
 class PersonContextSection(BaseModel):
     how_we_met: str | None = None
     first_met_on: date | None = None
+    last_contacted_on: date | None = None
+    contact_frequency_days: int | None = None
+    preferred_contact: TermSlim | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class PersonPhysicalSection(BaseModel):
+    height_cm: float | None = None
+    eye_color: TermSlim | None = None
+    hair_color: TermSlim | None = None
+    blood_type: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class PersonPersonalitySection(BaseModel):
+    interests: str | None = None
+    food_preferences: str | None = None
+    dietary_restrictions: str | None = None
+    personality_notes: str | None = None
+    communication_style: TermSlim | None = None
 
     model_config = {"from_attributes": True}
 
@@ -178,6 +240,8 @@ class PersonExtended(PersonSlim):
     social: PersonSocialSection | None = None
     location: PersonLocationSection | None = None
     context: PersonContextSection | None = None
+    physical: PersonPhysicalSection | None = None
+    personality: PersonPersonalitySection | None = None
 
 
 class PersonWithRelationships(PersonExtended):

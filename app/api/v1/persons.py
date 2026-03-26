@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.deps import get_current_user
+from app.crud.context_package import get_context_package, get_relationship_health
 from app.crud.person import (
     add_relationship,
     create_person,
@@ -17,6 +18,7 @@ from app.crud.person import (
 )
 from app.crud.reference import add_person_term, list_person_terms, remove_person_term
 from app.models.user import User
+from app.schemas.context_package import ContextPackage, RelationshipHealthEntry
 from app.schemas.person import (
     PersonCreate,
     PersonSlim,
@@ -47,6 +49,14 @@ async def list_all(
     limit: int = 50,
 ):
     return await list_persons(db, current_user.id, skip=skip, limit=limit)
+
+
+@router.get("/relationship-health", response_model=list[RelationshipHealthEntry])
+async def relationship_health(
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    return await get_relationship_health(db, current_user.id)
 
 
 @router.get("/{person_id}", response_model=PersonWithRelationships)
@@ -160,3 +170,15 @@ async def unlink_term(
     removed = await remove_person_term(db, person_id, term_id)
     if not removed:
         raise HTTPException(status_code=404, detail="Term link not found")
+
+
+@router.get("/{person_id}/context-package", response_model=ContextPackage)
+async def context_package(
+    person_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    pkg = await get_context_package(db, person_id, current_user.id)
+    if not pkg:
+        raise HTTPException(status_code=404, detail="Person not found")
+    return pkg

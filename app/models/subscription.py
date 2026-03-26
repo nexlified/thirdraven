@@ -7,7 +7,7 @@ from sqlmodel import Field, SQLModel
 class Subscription(SQLModel, table=True):
     __tablename__ = "subscription"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id", index=True)
     name: str
     provider: str | None = None
@@ -42,7 +42,7 @@ class SubscriptionTag(SQLModel, table=True):
 class BillPayment(SQLModel, table=True):
     __tablename__ = "bill_payment"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     subscription_id: uuid.UUID = Field(foreign_key="subscription.id", index=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id", index=True)
     amount: float

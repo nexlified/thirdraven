@@ -1,61 +1,140 @@
-# CLAUDE.md — ThirdRaven: Personal Entity & Relationship Manager (PERM)
+# CLAUDE.md — ThirdRaven
 
 ## Project Overview
-A high-performance, self-hosted API for managing personal networks, financial ledgers, and asset lifecycles. Designed to be a "Personal ERP" that acts as a central source of truth for relationships, ownership, and recurring costs.
 
-## Core Features
-1. **Entity Management**: Comprehensive tracking of people and organizations with deep relationship mapping.
-2. **Financial Ledger**: A contextual double-entry inspired ledger for tracking debts, gifts, and shared expenses.
-3. **Asset & Product Catalog**: Inventory management for physical and digital goods (hardware, software, tools).
-4. **Subscription Engine**: Tracking recurring costs, billing cycles, and automated renewal alerts.
-5. **Event-Sourced History**: Every change to an entity or asset is logged to provide a chronological "Life Timeline."
+A self-hosted personal relationship and knowledge management API. Serves as the data backbone for a personal AI companion (RavenPair). All data is local-first — no cloud dependencies required.
+
+**Two primary roles:**
+1. **Personal ERP** — people, organizations, assets, subscriptions, financial ledger
+2. **AI Knowledge Base** — episodic memory (observations), goals, follow-ups, context packages, relationship health
+
+---
 
 ## Tech Stack
-- **Language**: Python 3.12+
-- **Framework**: FastAPI (Async-first)
-- **Data Layer**: SQLModel (SQLAlchemy 2.0 + Pydantic v2)
-- **Migrations**: Alembic
-- **Formatting/Linting**: Ruff (The Rust-based Python linter)
+
+| Layer | Technology |
+|---|---|
+| Language | Python 3.14+ (`uuid.uuid7` from stdlib) |
+| Framework | FastAPI (async-first) |
+| ORM / Validation | SQLModel (SQLAlchemy 2.0 + Pydantic v2) |
+| Database | PostgreSQL in prod, SQLite for dev |
+| Migrations | Alembic |
+| Auth | JWT via python-jose + bcrypt |
+| Linting | Ruff (`target-version = "py314"`, line-length 88) |
+| Testing | pytest + pytest-asyncio (AsyncMock for all API tests) |
+
+---
 
 ## Development Commands
-- **Environment Setup**: `uv sync` (Recommended) or `pip install -e .`
-- **Start Server**: `fastapi dev app/main.py`
-- **Database Migrations**: 
-    - Create: `alembic revision --autogenerate -m "message"`
-    - Apply: `alembic upgrade head`
-- **Quality Control**:
-    - Format: `ruff format .`
-    - Lint: `ruff check . --fix`
-    - Test: `pytest`
 
-## Integration Architecture (The Raven-Bridge)
-- **Agnostic Core**: ThirdRaven must function 100% without an internet connection or external AI.
-- **Provider Pattern**: Implement an `Integrations` layer where RavenPair can be toggled as a service provider.
-- **Async Enrichment**: Use FastAPI background tasks to handle external AI requests so the user experience remains fast.
+```bash
+uv sync                                         # install deps
+fastapi dev app/main.py                         # start dev server (http://localhost:8000/docs)
+docker-compose up -d                            # start PostgreSQL
+
+alembic revision --autogenerate -m "message"    # generate migration
+alembic upgrade head                            # apply migrations
+
+ruff format .                                   # format
+ruff check . --fix                              # lint
+pytest                                          # test (174 tests)
+```
+
+---
 
 ## Code Style & Architecture
 
 ### 1. API Design
-- **Versioned Routes**: All endpoints reside under `/api/v1/`.
-- **Response Schemas**: Never return raw SQLModels. Always use `PublicRead` Pydantic schemas to filter internal IDs or sensitive metadata.
-- **Dependency Injection**: Use `Annotated` for DB sessions and Auth dependencies.
+- All endpoints under `/api/v1/`
+- Never return raw SQLModels — always use `Public` Pydantic response schemas
+- Use `Annotated[AsyncSession, Depends(get_session)]` and `Annotated[User, Depends(get_current_user)]` for DI
+- All queries are owner-scoped: `where(Model.owner_id == owner_id)`
 
 ### 2. Database Patterns
-- **Soft Deletes**: Implement a `deleted_at` timestamp for core entities rather than hard-deleting records.
-- **Atomic Transactions**: Use context managers for financial ledger entries to ensure data integrity.
-- **SQLite Optimization**: Use `PRAGMA foreign_keys = ON;` for local development.
- 
+- **UUIDs**: All primary keys use `uuid.uuid7()` (time-ordered, no extra dependency)
+- **Soft deletes**: Core entities use `deleted_at: datetime | None` — never hard-delete persons/orgs
+- **Vocabulary system**: Typed fields resolve slugs to `term_id` FKs via `resolve_optional_term_slug(db, "vocab-name", slug)` — no hardcoded enums in DB
+- **Junction tables**: Many-to-many via explicit models (e.g. `PersonTag`, `PersonObservationTag`, `EventPerson`)
+- **FK resolution helpers**: `resolve_term_slug`, `resolve_optional_term_slug` (crud/vocabulary.py), `resolve_country_alpha2` (crud/iso_reference.py)
+
 ### 3. Folder Structure
-```text
-.
-├── app/
-│   ├── api/v1/         # Domain-specific routers (contacts, ledger, assets)
-│   ├── core/           # Security, Config, Logging
-│   ├── crud/           # Business logic & DB operations
-│   ├── models/         # SQLModel Table definitions
-│   ├── schemas/        # Pydantic Request/Response DTOs
-│   └── main.py         # App initialization
-├── migrations/         # Alembic version history
-├── tests/              # Functional and unit tests
-├── CLAUDE.md           # Development standards (This file)
-└── pyproject.toml      # Dependency and Tool configuration
+
+```
+app/
+├── api/v1/          # One router file per resource domain
+├── core/            # config.py, database.py, deps.py, security.py
+├── crud/            # Business logic — one file per domain
+├── models/          # SQLModel table definitions
+├── schemas/         # Pydantic DTOs (Create / Update / Public / Slim)
+└── main.py
+```
+
+### 4. Naming Conventions
+
+| Schema type | Suffix | Purpose |
+|---|---|---|
+| Input (create) | `Create` | POST body |
+| Input (update) | `Update` | PATCH body, all fields optional |
+| Response (full) | `Public` | Full detail response |
+| Response (minimal) | `Slim` | Used inside nested objects |
+
+---
+
+## Domain Map
+
+### People & Relationships
+- `app/models/person.py` — core `Person` model
+- `app/models/person_extensions.py` — 1:1 extension tables: `PersonProfile`, `PersonProfessional`, `PersonSocial`, `PersonLocation`, `PersonContext`, `PersonPhysical`, `PersonPersonality`
+- `app/models/person_relationship.py` — `PersonRelationship` (M:M self-referential)
+- `app/models/person_life_event.py` — `PersonLifeEvent`, `PersonSignificantDate`
+- `app/crud/person.py` — section builder pattern (`_build_*_section`), opt-in `?include=` param
+
+### Knowledge Base (AI Companion Layer)
+- `app/models/observation.py` — `PersonObservation`, `PersonObservationTag`
+- `app/models/followup.py` — `PersonFollowUp`
+- `app/models/goal.py` — `PersonGoal` (types: aspiration / fear / current-focus / learning)
+- `app/models/organization.py` — `Organization`, `PersonOrganization`
+- `app/models/event.py` — `Event`, `EventPerson`
+- `app/crud/context_package.py` — `get_context_package` + `get_relationship_health`
+
+### Other Domains
+- `app/models/interaction.py` — `Interaction`
+- `app/models/note.py` — `Note` (optional person link)
+- `app/models/task.py` — `Task` (optional person link)
+- `app/models/asset.py` — `Asset`
+- `app/models/subscription.py` — `Subscription`, `BillPayment`
+
+---
+
+## Key Patterns
+
+### Section builder (person extensions)
+Person extensions are 1:1 tables loaded on demand via `?include=profile,social,...` or `?include=all`.
+Each section has a `_build_*_section(db, row)` async helper in `crud/person.py`.
+
+### Context Package
+`GET /persons/{id}/context-package` assembles all knowledge into one prompt-ready payload.
+Implemented in `crud/context_package.py: get_context_package()`.
+
+### Relationship Health
+`GET /persons/relationship-health` computes status from `PersonContext.last_contacted_on` and `contact_frequency_days`.
+**Must be defined before `GET /persons/{person_id}` in the router** to avoid FastAPI parsing "relationship-health" as a UUID.
+
+### Vocabulary Slugs
+All typed/categorized fields accept a string slug in Create/Update schemas and resolve to a `term_id` FK in the DB. Vocabulary groups used: `person-tags`, `org-types`, `industries`, `event-types`, `observation-tags`, `name-prefixes`, `genders`, `occupations`, `relationship-types`, `preferred-contact`, `eye-colors`, `hair-colors`, `communication-styles`, `personality-traits`.
+
+---
+
+## Integration Architecture (Raven-Bridge)
+
+- **Agnostic core**: ThirdRaven works 100% offline — no AI dependency
+- **Provider pattern**: RavenPair plugs in as an optional `Integrations` provider
+- **Async enrichment**: AI requests handled via FastAPI background tasks
+
+---
+
+## Testing
+
+- All API tests use `AsyncMock` / `unittest.mock.patch` — no real DB in tests
+- Test files mirror router files: `tests/test_persons.py`, `tests/test_interactions.py`, etc.
+- Run: `pytest` (currently 174 tests)

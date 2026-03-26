@@ -2,9 +2,15 @@ from fastapi import APIRouter
 
 from app.api.v1.assets import router as assets_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.events import event_persons_router, events_router
+from app.api.v1.followups import router as followups_router
+from app.api.v1.goals import router as goals_router
 from app.api.v1.interactions import router as interactions_router
 from app.api.v1.iso_reference import router as iso_reference_router
+from app.api.v1.life_events import life_events_router, significant_dates_router
 from app.api.v1.notes import router as notes_router
+from app.api.v1.observations import router as observations_router
+from app.api.v1.organizations import orgs_router, person_orgs_router
 from app.api.v1.persons import router as persons_router
 from app.api.v1.subscriptions import router as subscriptions_router
 from app.api.v1.tasks import router as tasks_router
@@ -15,6 +21,15 @@ api_router.include_router(auth_router)
 api_router.include_router(persons_router)
 api_router.include_router(assets_router)
 api_router.include_router(interactions_router)
+api_router.include_router(life_events_router)
+api_router.include_router(significant_dates_router)
+api_router.include_router(observations_router)
+api_router.include_router(followups_router)
+api_router.include_router(goals_router)
+api_router.include_router(orgs_router)
+api_router.include_router(person_orgs_router)
+api_router.include_router(events_router)
+api_router.include_router(event_persons_router)
 api_router.include_router(vocabularies_router)
 api_router.include_router(iso_reference_router)
 api_router.include_router(subscriptions_router)

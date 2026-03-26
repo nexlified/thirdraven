@@ -7,7 +7,7 @@ from sqlmodel import Field, SQLModel
 class Task(SQLModel, table=True):
     __tablename__ = "task"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id", index=True)
     title: str
     description: str | None = None
