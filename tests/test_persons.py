@@ -46,6 +46,8 @@ def make_person(**kwargs) -> PersonSlim:
         closeness_level=None,
         notes=None,
         tags=[],
+        visibility="private",
+        household_id=None,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
@@ -78,8 +80,12 @@ def app_client():
     app.dependency_overrides[get_session] = override_get_session
     app.dependency_overrides[get_current_user] = override_get_current_user
 
-    with TestClient(app) as client:
-        yield client
+    with patch(
+        "app.api.v1.persons.get_user_household_id",
+        new=AsyncMock(return_value=None),
+    ):
+        with TestClient(app) as client:
+            yield client
 
     app.dependency_overrides.clear()
 
