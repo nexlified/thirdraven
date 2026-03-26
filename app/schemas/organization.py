@@ -20,6 +20,7 @@ class OrgCreate(BaseModel):
     country: str | None = None     # ISO alpha2
     linkedin_url: str | None = None
     notes: str | None = None
+    visibility: str = "private"  # "private" | "household"
 
 
 class OrgUpdate(BaseModel):
@@ -35,6 +36,7 @@ class OrgUpdate(BaseModel):
     country: str | None = None
     linkedin_url: str | None = None
     notes: str | None = None
+    visibility: str | None = None  # "private" | "household"
 
 
 class OrgSlim(BaseModel):
@@ -62,6 +64,8 @@ class OrgPublic(BaseModel):
     country: CountrySlim | None
     linkedin_url: str | None
     notes: str | None
+    visibility: str
+    household_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime
 

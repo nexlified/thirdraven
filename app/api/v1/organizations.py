@@ -17,6 +17,7 @@ from app.crud.organization import (
     update_org,
     update_person_org,
 )
+from app.crud.household import get_user_household_id
 from app.crud.person import get_person
 from app.models.user import User
 from app.schemas.organization import (
@@ -43,7 +44,8 @@ async def create(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    return await create_org(db, current_user.id, data)
+    household_id = await get_user_household_id(db, current_user.id)
+    return await create_org(db, current_user.id, data, household_id=household_id)
 
 
 @orgs_router.get("/", response_model=list[OrgPublic])
@@ -53,7 +55,8 @@ async def list_all(
     skip: int = 0,
     limit: int = 50,
 ):
-    return await list_orgs(db, current_user.id, skip=skip, limit=limit)
+    household_id = await get_user_household_id(db, current_user.id)
+    return await list_orgs(db, current_user.id, skip=skip, limit=limit, household_id=household_id)
 
 
 @orgs_router.get("/{org_id}", response_model=OrgPublic)
@@ -62,7 +65,8 @@ async def get_one(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    org = await get_org(db, org_id, current_user.id)
+    household_id = await get_user_household_id(db, current_user.id)
+    org = await get_org(db, org_id, current_user.id, household_id=household_id)
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
     return org
@@ -75,7 +79,8 @@ async def patch(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    org = await update_org(db, org_id, current_user.id, data)
+    household_id = await get_user_household_id(db, current_user.id)
+    org = await update_org(db, org_id, current_user.id, data, household_id=household_id)
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
     return org
@@ -104,7 +109,8 @@ async def link_org(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    person = await get_person(db, person_id, current_user.id)
+    household_id = await get_user_household_id(db, current_user.id)
+    person = await get_person(db, person_id, current_user.id, household_id=household_id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
     return await link_person_org(db, person_id, data)
@@ -116,7 +122,8 @@ async def list_links(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    person = await get_person(db, person_id, current_user.id)
+    household_id = await get_user_household_id(db, current_user.id)
+    person = await get_person(db, person_id, current_user.id, household_id=household_id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
     return await list_person_orgs(db, person_id)

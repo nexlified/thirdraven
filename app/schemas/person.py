@@ -78,6 +78,8 @@ class PersonCreate(BaseModel):
     dietary_restrictions: str | None = None
     personality_notes: str | None = None
     communication_style: str | None = None  # slug from "communication-styles"
+    # household sharing
+    visibility: str = "private"  # "private" | "household"
 
 
 class PersonUpdate(BaseModel):
@@ -133,6 +135,8 @@ class PersonUpdate(BaseModel):
     dietary_restrictions: str | None = None
     personality_notes: str | None = None
     communication_style: str | None = None
+    # household sharing
+    visibility: str | None = None  # "private" | "household"
 
 
 # ── Response schemas ───────────────────────────────────────────────────────────
@@ -151,6 +155,8 @@ class PersonSlim(BaseModel):
     notes: str | None
     tags: list[TermSlim]
     closeness_level: int | None
+    visibility: str
+    household_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime
 

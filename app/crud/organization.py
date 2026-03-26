@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime
 
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import and_, or_, select
 
 from app.crud.iso_reference import resolve_country_alpha2
 from app.crud.vocabulary import resolve_optional_term_slug
@@ -20,6 +21,21 @@ from app.schemas.organization import (
     PersonOrgUpdate,
 )
 from app.schemas.vocabulary import TermSlim
+
+
+def _org_visibility_clause(
+    owner_id: uuid.UUID, household_id: uuid.UUID | None
+):
+    """WHERE clause covering owner's own orgs + household-visible orgs."""
+    if household_id:
+        return or_(
+            Organization.owner_id == owner_id,
+            and_(
+                Organization.visibility == "household",
+                Organization.household_id == household_id,
+            ),
+        )
+    return Organization.owner_id == owner_id
 
 
 async def _build_org_public(db: AsyncSession, row: Organization) -> OrgPublic:
@@ -59,6 +75,8 @@ async def _build_org_public(db: AsyncSession, row: Organization) -> OrgPublic:
         country=country,
         linkedin_url=row.linkedin_url,
         notes=row.notes,
+        visibility=row.visibility,
+        household_id=row.household_id,
         created_at=row.created_at,
         updated_at=row.updated_at,
     )
@@ -132,9 +150,25 @@ async def _resolve_org_fields(db: AsyncSession, raw: dict) -> dict:
 
 
 async def create_org(
-    db: AsyncSession, owner_id: uuid.UUID, data: OrgCreate
+    db: AsyncSession,
+    owner_id: uuid.UUID,
+    data: OrgCreate,
+    household_id: uuid.UUID | None = None,
 ) -> OrgPublic:
-    db_fields = await _resolve_org_fields(db, data.model_dump(exclude_unset=True))
+    raw = data.model_dump(exclude_unset=True)
+    requested_visibility = raw.get("visibility", "private")
+    if requested_visibility == "household":
+        if not household_id:
+            raise HTTPException(
+                status_code=400,
+                detail="You must be in a household to share records.",
+            )
+        raw["household_id"] = household_id
+        raw["visibility"] = "household"
+    else:
+        raw["visibility"] = "private"
+        raw.pop("household_id", None)
+    db_fields = await _resolve_org_fields(db, raw)
     row = Organization(owner_id=owner_id, **db_fields)
     db.add(row)
     await db.commit()
@@ -143,12 +177,15 @@ async def create_org(
 
 
 async def get_org(
-    db: AsyncSession, org_id: uuid.UUID, owner_id: uuid.UUID
+    db: AsyncSession,
+    org_id: uuid.UUID,
+    owner_id: uuid.UUID,
+    household_id: uuid.UUID | None = None,
 ) -> OrgPublic | None:
     r = await db.execute(
         select(Organization).where(
             Organization.id == org_id,
-            Organization.owner_id == owner_id,
+            _org_visibility_clause(owner_id, household_id),
             Organization.deleted_at.is_(None),
         )
     )
@@ -157,11 +194,18 @@ async def get_org(
 
 
 async def list_orgs(
-    db: AsyncSession, owner_id: uuid.UUID, skip: int = 0, limit: int = 50
+    db: AsyncSession,
+    owner_id: uuid.UUID,
+    skip: int = 0,
+    limit: int = 50,
+    household_id: uuid.UUID | None = None,
 ) -> list[OrgPublic]:
     r = await db.execute(
         select(Organization)
-        .where(Organization.owner_id == owner_id, Organization.deleted_at.is_(None))
+        .where(
+            _org_visibility_clause(owner_id, household_id),
+            Organization.deleted_at.is_(None),
+        )
         .order_by(Organization.name)
         .offset(skip)
         .limit(limit)
@@ -170,8 +214,13 @@ async def list_orgs(
 
 
 async def update_org(
-    db: AsyncSession, org_id: uuid.UUID, owner_id: uuid.UUID, data: OrgUpdate
+    db: AsyncSession,
+    org_id: uuid.UUID,
+    owner_id: uuid.UUID,
+    data: OrgUpdate,
+    household_id: uuid.UUID | None = None,
 ) -> OrgPublic | None:
+    # Write path: owner-only (no household visibility)
     r = await db.execute(
         select(Organization).where(
             Organization.id == org_id,
@@ -182,7 +231,22 @@ async def update_org(
     row = r.scalars().first()
     if not row:
         return None
-    db_fields = await _resolve_org_fields(db, data.model_dump(exclude_unset=True))
+    raw = data.model_dump(exclude_unset=True)
+    # Handle visibility change
+    if "visibility" in raw:
+        new_vis = raw.pop("visibility")
+        if new_vis == "household":
+            if not household_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="You must be in a household to share records.",
+                )
+            row.visibility = "household"
+            row.household_id = household_id
+        else:
+            row.visibility = "private"
+            row.household_id = None
+    db_fields = await _resolve_org_fields(db, raw)
     for field, value in db_fields.items():
         setattr(row, field, value)
     row.updated_at = datetime.utcnow()

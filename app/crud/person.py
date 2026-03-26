@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime
 
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import and_, or_, select
 
 from app.crud.iso_reference import (
     resolve_country_alpha2,
@@ -38,6 +39,24 @@ from app.schemas.person import (
     PersonUpdate,
 )
 from app.schemas.vocabulary import TermSlim
+
+# ── Household visibility helper ────────────────────────────────────────────────
+
+
+def _visibility_clause(
+    owner_id: uuid.UUID, household_id: uuid.UUID | None
+):
+    """WHERE clause covering owner's own records + household-visible records."""
+    if household_id:
+        return or_(
+            Person.owner_id == owner_id,
+            and_(
+                Person.visibility == "household",
+                Person.household_id == household_id,
+            ),
+        )
+    return Person.owner_id == owner_id
+
 
 # ── Field routing constants ────────────────────────────────────────────────────
 
@@ -282,6 +301,8 @@ async def _build_person_slim(db: AsyncSession, person: Person) -> PersonSlim:
         phone=person.phone,
         notes=person.notes,
         closeness_level=person.closeness_level,
+        visibility=person.visibility,
+        household_id=person.household_id,
         created_at=person.created_at,
         updated_at=person.updated_at,
         tags=tags,
@@ -445,9 +466,26 @@ async def _build_personality_section(
 
 
 async def create_person(
-    db: AsyncSession, owner_id: uuid.UUID, data: PersonCreate
+    db: AsyncSession,
+    owner_id: uuid.UUID,
+    data: PersonCreate,
+    household_id: uuid.UUID | None = None,
 ) -> PersonSlim:
     raw = data.model_dump(exclude_unset=True)
+
+    # Handle visibility before splitting fields
+    requested_visibility = raw.get("visibility", "private")
+    if requested_visibility == "household":
+        if not household_id:
+            raise HTTPException(
+                status_code=400,
+                detail="You must be in a household to share records.",
+            )
+        raw["household_id"] = household_id
+        raw["visibility"] = "household"
+    else:
+        raw["visibility"] = "private"
+        raw.pop("household_id", None)
 
     # Extract junction-table fields before splitting
     tags_slugs = raw.pop("tags", [])
@@ -512,11 +550,12 @@ async def get_person(
     person_id: uuid.UUID,
     owner_id: uuid.UUID,
     include: list[str] | None = None,
+    household_id: uuid.UUID | None = None,
 ) -> PersonExtended | None:
     result = await db.execute(
         select(Person).where(
             Person.id == person_id,
-            Person.owner_id == owner_id,
+            _visibility_clause(owner_id, household_id),
             Person.deleted_at.is_(None),
         )
     )
@@ -594,11 +633,15 @@ async def get_person(
 
 
 async def list_persons(
-    db: AsyncSession, owner_id: uuid.UUID, skip: int = 0, limit: int = 50
+    db: AsyncSession,
+    owner_id: uuid.UUID,
+    skip: int = 0,
+    limit: int = 50,
+    household_id: uuid.UUID | None = None,
 ) -> list[PersonSlim]:
     result = await db.execute(
         select(Person)
-        .where(Person.owner_id == owner_id, Person.deleted_at.is_(None))
+        .where(_visibility_clause(owner_id, household_id), Person.deleted_at.is_(None))
         .offset(skip)
         .limit(limit)
     )
@@ -612,6 +655,7 @@ async def update_person(
     owner_id: uuid.UUID,
     data: PersonUpdate,
     include: list[str] | None = None,
+    household_id: uuid.UUID | None = None,
 ) -> PersonExtended | None:
     result = await db.execute(
         select(Person).where(
@@ -640,6 +684,21 @@ async def update_person(
         physical_raw,
         personality_raw,
     ) = _split_fields(raw)
+
+    # Handle visibility change in core fields
+    if "visibility" in core:
+        new_vis = core.pop("visibility")
+        if new_vis == "household":
+            if not household_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="You must be in a household to share records.",
+                )
+            person.visibility = "household"
+            person.household_id = household_id
+        else:
+            person.visibility = "private"
+            person.household_id = None
 
     # Update core fields
     for field, value in core.items():
@@ -692,7 +751,7 @@ async def update_person(
         await _set_person_languages(db, person_id, languages_codes)
 
     await db.commit()
-    return await get_person(db, person_id, owner_id, include=include)
+    return await get_person(db, person_id, owner_id, include=include, household_id=household_id)
 
 
 async def soft_delete_person(

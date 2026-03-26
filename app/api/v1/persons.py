@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from app.core.deps import get_current_user
 from app.crud.context_package import get_context_package, get_relationship_health
+from app.crud.household import get_user_household_id
 from app.crud.person import (
     add_relationship,
     create_person,
@@ -38,7 +39,8 @@ async def create(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    return await create_person(db, current_user.id, data)
+    household_id = await get_user_household_id(db, current_user.id)
+    return await create_person(db, current_user.id, data, household_id=household_id)
 
 
 @router.get("/", response_model=list[PersonSlim])
@@ -48,7 +50,8 @@ async def list_all(
     skip: int = 0,
     limit: int = 50,
 ):
-    return await list_persons(db, current_user.id, skip=skip, limit=limit)
+    household_id = await get_user_household_id(db, current_user.id)
+    return await list_persons(db, current_user.id, skip=skip, limit=limit, household_id=household_id)
 
 
 @router.get("/relationship-health", response_model=list[RelationshipHealthEntry])
@@ -66,9 +69,10 @@ async def get_one(
     current_user: Annotated[User, Depends(get_current_user)],
     include: str = "",
 ):
+    household_id = await get_user_household_id(db, current_user.id)
     include_list = [s.strip() for s in include.split(",") if s.strip()]
     person = await get_person(
-        db, person_id, current_user.id, include=include_list or None
+        db, person_id, current_user.id, include=include_list or None, household_id=household_id
     )
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
@@ -86,7 +90,8 @@ async def patch(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    person = await update_person(db, person_id, current_user.id, data)
+    household_id = await get_user_household_id(db, current_user.id)
+    person = await update_person(db, person_id, current_user.id, data, household_id=household_id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
     return person
@@ -114,10 +119,12 @@ async def create_relationship(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
+    # Source person must be owned by current user (relationships are personal)
     person = await get_person(db, person_id, current_user.id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
-    target = await get_person(db, data.to_person_id, current_user.id)
+    household_id = await get_user_household_id(db, current_user.id)
+    target = await get_person(db, data.to_person_id, current_user.id, household_id=household_id)
     if not target:
         raise HTTPException(status_code=404, detail="Target person not found")
     return await add_relationship(

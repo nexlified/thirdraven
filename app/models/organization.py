@@ -26,6 +26,10 @@ class Organization(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     deleted_at: datetime | None = None
 
+    # Household sharing
+    household_id: uuid.UUID | None = Field(default=None, foreign_key="household.id", index=True)
+    visibility: str = Field(default="private")  # "private" | "household"
+
 
 class PersonOrganization(SQLModel, table=True):
     __tablename__ = "person_organization"
