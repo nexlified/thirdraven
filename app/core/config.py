@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     secret_key: str = "changeme"
     access_token_expire_minutes: int = 1440
     algorithm: str = "HS256"
+    raven_ollama_url: str | None = None  # e.g. http://localhost:11434
+    raven_model: str = "llama3.2"
 
 
 @lru_cache

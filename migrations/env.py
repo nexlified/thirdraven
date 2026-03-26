@@ -20,6 +20,10 @@ import app.models.relationship  # noqa: F401
 # Import all models so SQLModel.metadata is fully populated
 import app.models.communication  # noqa: F401
 import app.models.document  # noqa: F401
+import app.models.import_job  # noqa: F401
+import app.models.import_row  # noqa: F401
+import app.models.raven_log  # noqa: F401
+import app.models.raven_question  # noqa: F401
 import app.models.subscription  # noqa: F401
 import app.models.task  # noqa: F401
 import app.models.tracked_record  # noqa: F401

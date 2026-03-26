@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -31,3 +32,19 @@ async def get_current_user(
     if user is None or not user.is_active:
         raise credentials_exception
     return user
+
+
+@lru_cache
+def _get_raven_cached():
+    from app.core.config import get_settings
+    from app.integrations.raven import RavenProvider
+
+    settings = get_settings()
+    return RavenProvider(
+        ollama_url=settings.raven_ollama_url,
+        model=settings.raven_model,
+    )
+
+
+def get_raven():
+    return _get_raven_cached()
