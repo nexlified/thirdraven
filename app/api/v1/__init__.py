@@ -2,6 +2,8 @@ from fastapi import APIRouter
 
 from app.api.v1.assets import router as assets_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.addresses import router as addresses_router
+from app.api.v1.channels import router as channels_router
 from app.api.v1.households import router as households_router
 from app.api.v1.communications import router as communications_router
 from app.api.v1.documents import router as documents_router
@@ -29,6 +31,8 @@ api_router = APIRouter()
 api_router.include_router(auth_router)
 api_router.include_router(households_router)
 api_router.include_router(persons_router)
+api_router.include_router(channels_router)
+api_router.include_router(addresses_router)
 api_router.include_router(relationships_router)
 api_router.include_router(assets_router)
 api_router.include_router(interactions_router)

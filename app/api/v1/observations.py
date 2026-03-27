@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -47,6 +47,7 @@ async def list_all(
     current_user: Annotated[User, Depends(get_current_user)],
     pagination: Annotated[PaginationParams, Depends(PaginationParams)],
     include_sensitive: bool = True,
+    context: str | None = Query(default=None),
 ):
     person = await get_person(db, person_id, current_user.id)
     if not person:
@@ -54,6 +55,7 @@ async def list_all(
     items, total = await list_observations(
         db, person_id, current_user.id,
         skip=pagination.skip, limit=pagination.limit, include_sensitive=include_sensitive,
+        context=context,
     )
     return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 

@@ -10,9 +10,8 @@ from app.models.communication import Communication
 from app.models.interaction import Interaction
 from app.models.person import Person
 from app.models.person_extensions import (
+    PersonChannel,
     PersonContext,
-    PersonProfessional,
-    PersonSocial,
 )
 from app.schemas.communication import CommCreate, CommIngest, CommPublic, CommUpdate
 
@@ -41,98 +40,39 @@ async def _match_person(
     owner_id: uuid.UUID,
     channel: str,
     sender_identifier: str | None,
-) -> uuid.UUID | None:
+) -> Person | None:
+    """Return the matching known Person, or None if not found."""
     if not sender_identifier:
         return None
 
+    # Map incoming channel name to PersonChannel type values to check
     if channel == "email":
-        r = await db.execute(
-            select(Person).where(
-                Person.owner_id == owner_id,
-                Person.email == sender_identifier,
-                Person.deleted_at.is_(None),
-            )
-        )
-        person = r.scalars().first()
-        return person.id if person else None
+        channel_types = ["email"]
+    elif channel in ("whatsapp", "sms", "phone-call"):
+        channel_types = ["mobile", "phone"]
+    else:
+        # For all other channels (telegram, twitter, discord, instagram, linkedin, etc.)
+        # the channel name matches the PersonChannel.type directly
+        channel_types = [channel]
 
-    if channel in ("whatsapp", "sms", "phone-call"):
-        r = await db.execute(
-            select(Person).where(
-                Person.owner_id == owner_id,
-                Person.phone == sender_identifier,
-                Person.deleted_at.is_(None),
-            )
+    r = await db.execute(
+        select(Person)
+        .join(PersonChannel, PersonChannel.person_id == Person.id)
+        .where(
+            Person.owner_id == owner_id,
+            PersonChannel.type.in_(channel_types),
+            PersonChannel.value == sender_identifier,
+            Person.deleted_at.is_(None),
         )
-        person = r.scalars().first()
-        return person.id if person else None
+    )
+    return r.scalars().first()
 
-    if channel == "telegram":
-        r = await db.execute(
-            select(Person)
-            .join(PersonSocial, PersonSocial.person_id == Person.id)
-            .where(
-                Person.owner_id == owner_id,
-                PersonSocial.telegram_handle == sender_identifier,
-                Person.deleted_at.is_(None),
-            )
-        )
-        person = r.scalars().first()
-        return person.id if person else None
 
-    if channel in ("twitter", "x"):
-        r = await db.execute(
-            select(Person)
-            .join(PersonSocial, PersonSocial.person_id == Person.id)
-            .where(
-                Person.owner_id == owner_id,
-                PersonSocial.twitter_handle == sender_identifier,
-                Person.deleted_at.is_(None),
-            )
-        )
-        person = r.scalars().first()
-        return person.id if person else None
-
-    if channel == "discord":
-        r = await db.execute(
-            select(Person)
-            .join(PersonSocial, PersonSocial.person_id == Person.id)
-            .where(
-                Person.owner_id == owner_id,
-                PersonSocial.discord_handle == sender_identifier,
-                Person.deleted_at.is_(None),
-            )
-        )
-        person = r.scalars().first()
-        return person.id if person else None
-
-    if channel == "instagram":
-        r = await db.execute(
-            select(Person)
-            .join(PersonSocial, PersonSocial.person_id == Person.id)
-            .where(
-                Person.owner_id == owner_id,
-                PersonSocial.instagram_handle == sender_identifier,
-                Person.deleted_at.is_(None),
-            )
-        )
-        person = r.scalars().first()
-        return person.id if person else None
-
-    if channel == "linkedin":
-        r = await db.execute(
-            select(Person)
-            .join(PersonProfessional, PersonProfessional.person_id == Person.id)
-            .where(
-                Person.owner_id == owner_id,
-                PersonProfessional.linkedin_url == sender_identifier,
-                Person.deleted_at.is_(None),
-            )
-        )
-        person = r.scalars().first()
-        return person.id if person else None
-
-    return None
+def _derive_first_name(channel: str, sender_identifier: str) -> str:
+    """Derive a human-readable first_name from a raw sender identifier."""
+    if channel == "email" and "@" in sender_identifier:
+        return sender_identifier.split("@")[0]
+    return sender_identifier
 
 
 # ── PersonContext last_contacted_on upsert ────────────────────────────────────
@@ -162,34 +102,21 @@ async def _update_last_contacted(
 # ── Auto-processing pipeline ───────────────────────────────────────────────────
 
 
-async def _auto_process(
+async def _create_interaction_for_person(
     db: AsyncSession,
     row: Communication,
     owner_id: uuid.UUID,
-) -> None:
-    person_id = await _match_person(
-        db, owner_id, row.channel, row.sender_identifier
-    )
-    if not person_id:
-        row.status = "unmatched"
-        return
-
-    # Resolve interaction type from channel
+    person_id: uuid.UUID,
+) -> Interaction:
+    """Create and flush an Interaction linked to the given person."""
     type_slug = _CHANNEL_TO_INTERACTION_TYPE.get(row.channel, "other")
     interaction_type_id = await resolve_optional_term_slug(
         db, "interaction-types", type_slug
     )
-
-    # Build interaction title
-    if row.subject:
-        title = row.subject
-    else:
-        sender = row.sender_identifier or "unknown"
-        title = f"{row.channel} message from {sender}"
-
+    sender = row.sender_identifier or "unknown"
+    title = row.subject or f"{row.channel} message from {sender}"
     occurred_on = row.communicated_at.date() if row.communicated_at else date.today()
-    notes = (row.body[:2000] if row.body and len(row.body) > 2000 else row.body)
-
+    notes = row.body[:2000] if row.body and len(row.body) > 2000 else row.body
     interaction = Interaction(
         person_id=person_id,
         owner_id=owner_id,
@@ -200,13 +127,66 @@ async def _auto_process(
     )
     db.add(interaction)
     await db.flush()
+    return interaction
 
-    row.person_id = person_id
-    row.interaction_id = interaction.id
-    row.status = "matched"
-    row.processed_at = datetime.utcnow()
 
-    await _update_last_contacted(db, person_id, row.communicated_at)
+async def _auto_process(
+    db: AsyncSession,
+    row: Communication,
+    owner_id: uuid.UUID,
+) -> None:
+    person = await _match_person(db, owner_id, row.channel, row.sender_identifier)
+
+    if person:
+        # Known person matched
+        if person.is_bot:
+            row.is_bot = True
+        interaction = await _create_interaction_for_person(
+            db, row, owner_id, person.id
+        )
+        row.person_id = person.id
+        row.interaction_id = interaction.id
+        row.status = "matched"
+        row.processed_at = datetime.utcnow()
+        await _update_last_contacted(db, person.id, row.communicated_at)
+        return
+
+    if row.sender_identifier:
+        # Unknown sender — create a placeholder person
+        first_name = _derive_first_name(row.channel, row.sender_identifier)
+        placeholder = Person(
+            owner_id=owner_id,
+            first_name=first_name,
+            is_placeholder=True,
+        )
+        db.add(placeholder)
+        await db.flush()
+        # Create channel entry for the sender identifier
+        if row.channel == "email":
+            ch_type = "email"
+        elif row.channel in ("whatsapp", "sms", "phone-call"):
+            ch_type = "mobile"
+        else:
+            ch_type = row.channel
+        db.add(PersonChannel(
+            person_id=placeholder.id,
+            owner_id=owner_id,
+            value=row.sender_identifier,
+            type=ch_type,
+            is_primary=True,
+        ))
+        interaction = await _create_interaction_for_person(
+            db, row, owner_id, placeholder.id
+        )
+        row.person_id = placeholder.id
+        row.interaction_id = interaction.id
+        row.status = "placeholder"
+        row.processed_at = datetime.utcnow()
+        await _update_last_contacted(db, placeholder.id, row.communicated_at)
+        return
+
+    # No sender identifier at all — cannot create a person
+    row.status = "unmatched"
 
 
 # ── CRUD ───────────────────────────────────────────────────────────────────────
@@ -278,6 +258,8 @@ async def list_communications(
     channel: str | None = None,
     status: str | None = None,
     person_id: uuid.UUID | None = None,
+    is_bot: bool | None = None,
+    context: str | None = None,
 ) -> tuple[list[CommPublic], int]:
     base = select(Communication).where(Communication.owner_id == owner_id)
     if channel:
@@ -286,6 +268,10 @@ async def list_communications(
         base = base.where(Communication.status == status)
     if person_id:
         base = base.where(Communication.person_id == person_id)
+    if is_bot is not None:
+        base = base.where(Communication.is_bot == is_bot)
+    if context is not None:
+        base = base.where(Communication.context == context)
     total = (
         await db.execute(select(func.count()).select_from(base.subquery()))
     ).scalar_one()

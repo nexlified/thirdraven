@@ -50,6 +50,7 @@ async def _build(db: AsyncSession, row: PersonObservation) -> ObservationPublic:
         body=row.body,
         observed_on=row.observed_on,
         source=row.source,
+        context=row.context,
         is_sensitive=row.is_sensitive,
         tags=tags,
         created_at=row.created_at,
@@ -99,6 +100,7 @@ async def list_observations(
     skip: int = 0,
     limit: int = 50,
     include_sensitive: bool = True,
+    context: str | None = None,
 ) -> tuple[list[ObservationPublic], int]:
     base = select(PersonObservation).where(
         PersonObservation.person_id == person_id,
@@ -106,6 +108,8 @@ async def list_observations(
     )
     if not include_sensitive:
         base = base.where(PersonObservation.is_sensitive.is_(False))
+    if context is not None:
+        base = base.where(PersonObservation.context == context)
     total = (
         await db.execute(select(func.count()).select_from(base.subquery()))
     ).scalar_one()

@@ -44,6 +44,8 @@ class CommCreate(BaseModel):
     body: str | None = None
     communicated_at: datetime | None = None
     raw_payload: dict[str, Any] | None = None
+    context: str | None = None  # "personal" | "professional" | "mixed"
+    is_bot: bool = False
 
 
 class CommUpdate(BaseModel):
@@ -51,7 +53,8 @@ class CommUpdate(BaseModel):
     status: str | None = None
     subject: str | None = None
     body: str | None = None
-    notes: str | None = None
+    context: str | None = None  # "personal" | "professional" | "mixed"
+    is_bot: bool | None = None
 
 
 class CommPublic(BaseModel):
@@ -60,6 +63,7 @@ class CommPublic(BaseModel):
     channel: str
     direction: str
     status: str
+    is_bot: bool
     sender_identifier: str | None
     recipient_identifiers: list[str] | None
     source_app: str | None
@@ -70,6 +74,7 @@ class CommPublic(BaseModel):
     raw_payload: dict[str, Any] | None
     communicated_at: datetime | None
     processed_at: datetime | None
+    context: str | None
     person_id: uuid.UUID | None
     interaction_id: uuid.UUID | None
     created_at: datetime

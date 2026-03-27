@@ -1,13 +1,14 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.deps import PaginationParams, get_current_user
 from app.crud.context_package import get_context_package, get_relationship_health
 from app.crud.household import get_user_household_id
+from app.crud.iso_reference import list_countries, list_languages, list_timezones
 from app.crud.person import (
     create_person,
     get_person,
@@ -20,10 +21,13 @@ from app.crud.person_relationship import (
     list_relationships_for_person,
 )
 from app.crud.reference import add_person_term, list_person_terms, remove_person_term
+from app.crud.vocabulary import list_terms as list_vocab_terms
 from app.models.user import User
 from app.schemas.context_package import ContextPackage, RelationshipHealthEntry
+from app.schemas.iso_reference import CountrySlim, LanguageSlim, TimezonePublic
 from app.schemas.person import (
     PersonCreate,
+    PersonFieldOptions,
     PersonSlim,
     PersonUpdate,
     PersonWithRelationships,
@@ -32,6 +36,7 @@ from app.schemas.person import (
 )
 from app.schemas.paginated import Paginated
 from app.schemas.reference import PersonTermCreate, PersonTermPublic
+from app.schemas.vocabulary import TermSlim
 
 router = APIRouter(prefix="/persons", tags=["persons"])
 
@@ -51,10 +56,20 @@ async def list_all(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
     pagination: Annotated[PaginationParams, Depends(PaginationParams)],
+    is_placeholder: bool | None = Query(default=None),
+    is_bot: bool | None = Query(default=None),
+    relationship_nature: str | None = Query(default=None),
 ):
     household_id = await get_user_household_id(db, current_user.id)
     items, total = await list_persons(
-        db, current_user.id, skip=pagination.skip, limit=pagination.limit, household_id=household_id
+        db,
+        current_user.id,
+        skip=pagination.skip,
+        limit=pagination.limit,
+        household_id=household_id,
+        is_placeholder=is_placeholder,
+        is_bot=is_bot,
+        relationship_nature=relationship_nature,
     )
     return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
@@ -65,6 +80,30 @@ async def relationship_health(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     return await get_relationship_health(db, current_user.id)
+
+
+@router.get("/schema", response_model=PersonFieldOptions)
+async def get_schema(
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    return PersonFieldOptions(
+        prefixes=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "name-prefixes")],
+        genders=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "genders")],
+        occupations=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "occupations")],
+        eye_colors=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "eye-colors")],
+        hair_colors=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "hair-colors")],
+        communication_styles=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "communication-styles")],
+        tags=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "person-tags")],
+        relationship_types=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "relationship-types")],
+        preferred_contact=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "preferred-contact")],
+        address_types=["home", "work", "other"],
+        channel_types=[
+            "email", "mobile", "phone", "whatsapp", "telegram", "discord",
+            "twitter", "instagram", "github", "facebook", "linkedin", "website",
+            "signal", "slack", "other",
+        ],
+    )
 
 
 @router.get("/{person_id}", response_model=PersonWithRelationships)

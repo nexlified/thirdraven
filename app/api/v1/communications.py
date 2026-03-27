@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -56,6 +56,8 @@ async def list_all(
     channel: str | None = None,
     status: str | None = None,
     person_id: uuid.UUID | None = None,
+    is_bot: bool | None = Query(default=None),
+    context: str | None = Query(default=None),
 ):
     items, total = await list_communications(
         db,
@@ -65,6 +67,8 @@ async def list_all(
         channel=channel,
         status=status,
         person_id=person_id,
+        is_bot=is_bot,
+        context=context,
     )
     return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 

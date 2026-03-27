@@ -15,17 +15,23 @@ from app.crud.vocabulary import resolve_optional_term_slug, resolve_term_slug
 from app.models.iso_reference import Country, Language, Timezone
 from app.models.person import Person
 from app.models.person_extensions import (
+    PersonAddress,
+    PersonChannel,
     PersonContext,
     PersonLocation,
     PersonPersonality,
     PersonPhysical,
     PersonProfessional,
     PersonProfile,
-    PersonSocial,
 )
 from app.models.vocabulary import PersonLanguage, PersonTag, Term
 from app.schemas.iso_reference import CountrySlim, LanguageSlim, TimezonePublic
 from app.schemas.person import (
+    AddressCreate,
+    AddressPublic,
+    ChannelCreate,
+    ChannelPublic,
+    ChannelUpdate,
     PersonContextSection,
     PersonCreate,
     PersonExtended,
@@ -35,7 +41,6 @@ from app.schemas.person import (
     PersonProfessionalSection,
     PersonProfileSection,
     PersonSlim,
-    PersonSocialSection,
     PersonUpdate,
 )
 from app.schemas.vocabulary import TermSlim
@@ -72,25 +77,15 @@ _PROFESSIONAL_FIELDS = {
     "occupation",
     "company",
     "job_title",
-    "linkedin_url",
-    "phone_secondary",
 }
-_SOCIAL_FIELDS = {
-    "twitter_handle",
-    "instagram_handle",
-    "website_url",
-    "facebook_url",
-    "github_handle",
-    "discord_handle",
-    "telegram_handle",
-}
-_LOCATION_FIELDS = {"address_home", "address_work", "city", "country", "timezone"}
+_LOCATION_FIELDS = {"timezone"}
 _CONTEXT_FIELDS = {
     "how_we_met",
     "first_met_on",
     "last_contacted_on",
     "contact_frequency_days",
     "preferred_contact",
+    "relationship_nature",
 }
 _PHYSICAL_FIELDS = {"height_cm", "eye_color", "hair_color", "blood_type"}
 _PERSONALITY_FIELDS = {
@@ -104,7 +99,6 @@ _PERSONALITY_FIELDS = {
 _ALL_EXT_FIELDS = (
     _PROFILE_FIELDS
     | _PROFESSIONAL_FIELDS
-    | _SOCIAL_FIELDS
     | _LOCATION_FIELDS
     | _CONTEXT_FIELDS
     | _PHYSICAL_FIELDS
@@ -114,12 +108,11 @@ _ALL_EXT_FIELDS = (
 
 def _split_fields(
     data: dict,
-) -> tuple[dict, dict, dict, dict, dict, dict, dict, dict]:
-    """Partition a flat dict into (core, profile, professional, social, location, context, physical, personality)."""  # noqa: E501
+) -> tuple[dict, dict, dict, dict, dict, dict, dict]:
+    """Partition a flat dict into (core, profile, professional, location, context, physical, personality)."""  # noqa: E501
     core: dict = {}
     profile: dict = {}
     professional: dict = {}
-    social: dict = {}
     location: dict = {}
     context: dict = {}
     physical: dict = {}
@@ -128,7 +121,6 @@ def _split_fields(
     buckets = {
         **{k: profile for k in _PROFILE_FIELDS},
         **{k: professional for k in _PROFESSIONAL_FIELDS},
-        **{k: social for k in _SOCIAL_FIELDS},
         **{k: location for k in _LOCATION_FIELDS},
         **{k: context for k in _CONTEXT_FIELDS},
         **{k: physical for k in _PHYSICAL_FIELDS},
@@ -141,7 +133,7 @@ def _split_fields(
         else:
             core[k] = v
 
-    return core, profile, professional, social, location, context, physical, personality
+    return core, profile, professional, location, context, physical, personality
 
 
 # ── Slug-to-FK resolution helpers ─────────────────────────────────────────────
@@ -183,12 +175,8 @@ async def _resolve_professional_fields(db: AsyncSession, raw: dict) -> dict:
 async def _resolve_location_fields(db: AsyncSession, raw: dict) -> dict:
     result = {}
     for k, v in raw.items():
-        if k == "country":
-            result["country_id"] = await resolve_country_alpha2(db, v)
-        elif k == "timezone":
+        if k == "timezone":
             result["timezone_id"] = await resolve_timezone_name(db, v)
-        else:
-            result[k] = v
     return result
 
 
@@ -200,7 +188,7 @@ async def _resolve_context_fields(db: AsyncSession, raw: dict) -> dict:
                 db, "contact-channels", v
             )
         else:
-            result[k] = v
+            result[k] = v  # relationship_nature and other raw strings pass through
     return result
 
 
@@ -286,19 +274,127 @@ async def _set_person_languages(
             db.add(PersonLanguage(person_id=person_id, language_id=lang_id))
 
 
+# ── Channel helpers ────────────────────────────────────────────────────────────
+
+
+async def _get_primary_channel(
+    db: AsyncSession, person_id: uuid.UUID, type_: str
+) -> str | None:
+    r = await db.execute(
+        select(PersonChannel).where(
+            PersonChannel.person_id == person_id,
+            PersonChannel.type == type_,
+            PersonChannel.is_primary.is_(True),
+        )
+    )
+    row = r.scalars().first()
+    return row.value if row else None
+
+
+async def _set_channels(
+    db: AsyncSession,
+    person_id: uuid.UUID,
+    owner_id: uuid.UUID,
+    channels: list[ChannelCreate],
+) -> None:
+    """Replace all channels for a person."""
+    existing = await db.execute(
+        select(PersonChannel).where(PersonChannel.person_id == person_id)
+    )
+    for row in existing.scalars().all():
+        await db.delete(row)
+    for ch in channels:
+        db.add(
+            PersonChannel(
+                person_id=person_id,
+                owner_id=owner_id,
+                type=ch.type,
+                value=ch.value,
+                label=ch.label,
+                is_primary=ch.is_primary,
+            )
+        )
+
+
+# ── Address helpers ────────────────────────────────────────────────────────────
+
+
+async def _set_addresses(
+    db: AsyncSession,
+    person_id: uuid.UUID,
+    owner_id: uuid.UUID,
+    addresses: list[AddressCreate],
+) -> None:
+    """Replace all addresses for a person."""
+    existing = await db.execute(
+        select(PersonAddress).where(PersonAddress.person_id == person_id)
+    )
+    for row in existing.scalars().all():
+        await db.delete(row)
+    for addr in addresses:
+        country_id = None
+        if addr.country:
+            country_id = await resolve_country_alpha2(db, addr.country)
+        db.add(
+            PersonAddress(
+                person_id=person_id,
+                owner_id=owner_id,
+                type=addr.type,
+                street=addr.street,
+                city=addr.city,
+                postal_code=addr.postal_code,
+                country_id=country_id,
+                lat=addr.lat,
+                lng=addr.lng,
+                is_primary=addr.is_primary,
+            )
+        )
+
+
+async def _build_addresses(
+    db: AsyncSession, person_id: uuid.UUID
+) -> list[AddressPublic]:
+    r = await db.execute(
+        select(PersonAddress, Country)
+        .outerjoin(Country, Country.id == PersonAddress.country_id)
+        .where(PersonAddress.person_id == person_id)
+        .order_by(PersonAddress.is_primary.desc(), PersonAddress.created_at)
+    )
+    addresses = []
+    for addr, country in r.all():
+        addresses.append(
+            AddressPublic(
+                id=addr.id,
+                type=addr.type,
+                street=addr.street,
+                city=addr.city,
+                postal_code=addr.postal_code,
+                country=CountrySlim.model_validate(country) if country else None,
+                lat=addr.lat,
+                lng=addr.lng,
+                is_primary=addr.is_primary,
+            )
+        )
+    return addresses
+
+
 # ── PersonSlim builder ─────────────────────────────────────────────────────────
 
 
 async def _build_person_slim(db: AsyncSession, person: Person) -> PersonSlim:
     tags = await _get_person_tags(db, person.id)
+    email = await _get_primary_channel(db, person.id, "email")
+    phone = await _get_primary_channel(db, person.id, "mobile")
+    if phone is None:
+        phone = await _get_primary_channel(db, person.id, "phone")
     return PersonSlim(
         id=person.id,
         owner_id=person.owner_id,
         first_name=person.first_name,
         last_name=person.last_name,
         nickname=person.nickname,
-        email=person.email,
-        phone=person.phone,
+        email=email,
+        phone=phone,
         notes=person.notes,
         closeness_level=person.closeness_level,
         visibility=person.visibility,
@@ -306,6 +402,8 @@ async def _build_person_slim(db: AsyncSession, person: Person) -> PersonSlim:
         created_at=person.created_at,
         updated_at=person.updated_at,
         tags=tags,
+        is_placeholder=person.is_placeholder,
+        is_bot=person.is_bot,
     )
 
 
@@ -364,21 +462,12 @@ async def _build_professional_section(
         occupation=occupation,
         company=row.company,
         job_title=row.job_title,
-        linkedin_url=row.linkedin_url,
-        phone_secondary=row.phone_secondary,
     )
 
 
 async def _build_location_section(
-    db: AsyncSession, row: PersonLocation
+    db: AsyncSession, person_id: uuid.UUID, row: PersonLocation
 ) -> PersonLocationSection:
-    country = None
-    if row.country_id:
-        r = await db.execute(select(Country).where(Country.id == row.country_id))
-        c = r.scalars().first()
-        if c:
-            country = CountrySlim.model_validate(c)
-
     timezone = None
     if row.timezone_id:
         r = await db.execute(select(Timezone).where(Timezone.id == row.timezone_id))
@@ -386,12 +475,11 @@ async def _build_location_section(
         if tz:
             timezone = TimezonePublic.model_validate(tz)
 
+    addresses = await _build_addresses(db, person_id)
+
     return PersonLocationSection(
-        address_home=row.address_home,
-        address_work=row.address_work,
-        city=row.city,
-        country=country,
         timezone=timezone,
+        addresses=addresses,
     )
 
 
@@ -413,6 +501,7 @@ async def _build_context_section(
         last_contacted_on=row.last_contacted_on,
         contact_frequency_days=row.contact_frequency_days,
         preferred_contact=preferred_contact,
+        relationship_nature=row.relationship_nature,
     )
 
 
@@ -487,15 +576,16 @@ async def create_person(
         raw["visibility"] = "private"
         raw.pop("household_id", None)
 
-    # Extract junction-table fields before splitting
+    # Extract many-per-person and junction-table fields before splitting
     tags_slugs = raw.pop("tags", [])
     languages_codes = raw.pop("languages", [])
+    channels_data = raw.pop("channels", [])
+    addresses_data = raw.pop("addresses", [])
 
     (
         core,
         profile_raw,
         professional_raw,
-        social_raw,
         location_raw,
         context_raw,
         physical_raw,
@@ -519,8 +609,6 @@ async def create_person(
         db.add(PersonProfile(person_id=person.id, **profile_db))
     if professional_db:
         db.add(PersonProfessional(person_id=person.id, **professional_db))
-    if social_raw:
-        db.add(PersonSocial(person_id=person.id, **social_raw))
     if location_db:
         db.add(PersonLocation(person_id=person.id, **location_db))
     if context_db:
@@ -539,6 +627,42 @@ async def create_person(
         lang_id = await resolve_language_code(db, code)
         if lang_id:
             db.add(PersonLanguage(person_id=person.id, language_id=lang_id))
+
+    # Channels
+    channels = [
+        ChannelCreate(**ch) if isinstance(ch, dict) else ch for ch in channels_data
+    ]
+    for ch in channels:
+        db.add(PersonChannel(
+            person_id=person.id,
+            owner_id=owner_id,
+            type=ch.type,
+            value=ch.value,
+            label=ch.label,
+            is_primary=ch.is_primary,
+        ))
+
+    # Addresses
+    addresses = [
+        AddressCreate(**addr) if isinstance(addr, dict) else addr
+        for addr in addresses_data
+    ]
+    for addr in addresses:
+        country_id = None
+        if addr.country:
+            country_id = await resolve_country_alpha2(db, addr.country)
+        db.add(PersonAddress(
+            person_id=person.id,
+            owner_id=owner_id,
+            type=addr.type,
+            street=addr.street,
+            city=addr.city,
+            postal_code=addr.postal_code,
+            country_id=country_id,
+            lat=addr.lat,
+            lng=addr.lng,
+            is_primary=addr.is_primary,
+        ))
 
     await db.commit()
     await db.refresh(person)
@@ -587,21 +711,14 @@ async def get_person(
             if row:
                 sections["professional"] = await _build_professional_section(db, row)
 
-        if all_requested or "social" in include:
-            r = await db.execute(
-                select(PersonSocial).where(PersonSocial.person_id == person_id)
-            )
-            row = r.scalars().first()
-            if row:
-                sections["social"] = PersonSocialSection.model_validate(row)
-
         if all_requested or "location" in include:
             r = await db.execute(
                 select(PersonLocation).where(PersonLocation.person_id == person_id)
             )
             row = r.scalars().first()
-            if row:
-                sections["location"] = await _build_location_section(db, row)
+            # Always return location section when requested (addresses may exist even without timezone)
+            loc_row = row or PersonLocation(person_id=person_id)
+            sections["location"] = await _build_location_section(db, person_id, loc_row)
 
         if all_requested or "context" in include:
             r = await db.execute(
@@ -629,6 +746,16 @@ async def get_person(
             if row:
                 sections["personality"] = await _build_personality_section(db, row)
 
+        if all_requested or "channels" in include or "contact_methods" in include:
+            r = await db.execute(
+                select(PersonChannel)
+                .where(PersonChannel.person_id == person_id)
+                .order_by(PersonChannel.is_primary.desc(), PersonChannel.created_at)
+            )
+            sections["channels"] = [
+                ChannelPublic.model_validate(ch) for ch in r.scalars().all()
+            ]
+
     return PersonExtended(**slim.model_dump(), **sections)
 
 
@@ -638,10 +765,22 @@ async def list_persons(
     skip: int = 0,
     limit: int = 50,
     household_id: uuid.UUID | None = None,
+    is_placeholder: bool | None = None,
+    is_bot: bool | None = None,
+    relationship_nature: str | None = None,
 ) -> tuple[list[PersonSlim], int]:
     base = select(Person).where(
         _visibility_clause(owner_id, household_id), Person.deleted_at.is_(None)
     )
+    if is_placeholder is not None:
+        base = base.where(Person.is_placeholder == is_placeholder)
+    if is_bot is not None:
+        base = base.where(Person.is_bot == is_bot)
+    if relationship_nature is not None:
+        base = (
+            base.outerjoin(PersonContext, PersonContext.person_id == Person.id)
+            .where(PersonContext.relationship_nature == relationship_nature)
+        )
     total = (
         await db.execute(select(func.count()).select_from(base.subquery()))
     ).scalar_one()
@@ -673,15 +812,16 @@ async def update_person(
 
     raw = data.model_dump(exclude_unset=True)
 
-    # Extract junction-table fields before splitting
+    # Extract many-per-person and junction-table fields before splitting
     tags_slugs = raw.pop("tags", None)
     languages_codes = raw.pop("languages", None)
+    channels_data = raw.pop("channels", None)
+    addresses_data = raw.pop("addresses", None)
 
     (
         core,
         profile_raw,
         professional_raw,
-        social_raw,
         location_raw,
         context_raw,
         physical_raw,
@@ -732,26 +872,27 @@ async def update_person(
             else:
                 db.add(ext_cls(person_id=person_id, **ext_db))
 
-    # Update social (no resolver needed — raw values stored directly)
-    if social_raw:
-        row_result = await db.execute(
-            select(PersonSocial).where(PersonSocial.person_id == person_id)
-        )
-        ext_row = row_result.scalars().first()
-        if ext_row:
-            for field, value in social_raw.items():
-                setattr(ext_row, field, value)
-            ext_row.updated_at = datetime.utcnow()
-            db.add(ext_row)
-        else:
-            db.add(PersonSocial(person_id=person_id, **social_raw))
-
     # Update junction tables (replace-all semantics)
     if tags_slugs is not None:
         await _set_person_tags(db, person_id, tags_slugs)
 
     if languages_codes is not None:
         await _set_person_languages(db, person_id, languages_codes)
+
+    # Many-per-person replace-all
+    if channels_data is not None:
+        channels = [
+            ChannelCreate(**ch) if isinstance(ch, dict) else ch
+            for ch in channels_data
+        ]
+        await _set_channels(db, person_id, owner_id, channels)
+
+    if addresses_data is not None:
+        addresses = [
+            AddressCreate(**addr) if isinstance(addr, dict) else addr
+            for addr in addresses_data
+        ]
+        await _set_addresses(db, person_id, owner_id, addresses)
 
     await db.commit()
     return await get_person(db, person_id, owner_id, include=include, household_id=household_id)
@@ -776,3 +917,190 @@ async def soft_delete_person(
     return person
 
 
+# ── Channel CRUD ───────────────────────────────────────────────────────────────
+
+
+async def create_channel(
+    db: AsyncSession,
+    person_id: uuid.UUID,
+    owner_id: uuid.UUID,
+    data: ChannelCreate,
+) -> ChannelPublic:
+    ch = PersonChannel(
+        person_id=person_id,
+        owner_id=owner_id,
+        type=data.type,
+        value=data.value,
+        label=data.label,
+        is_primary=data.is_primary,
+    )
+    db.add(ch)
+    await db.commit()
+    await db.refresh(ch)
+    return ChannelPublic.model_validate(ch)
+
+
+async def update_channel(
+    db: AsyncSession,
+    ch_id: uuid.UUID,
+    person_id: uuid.UUID,
+    owner_id: uuid.UUID,
+    data: ChannelUpdate,
+) -> ChannelPublic | None:
+    r = await db.execute(
+        select(PersonChannel).where(
+            PersonChannel.id == ch_id,
+            PersonChannel.person_id == person_id,
+            PersonChannel.owner_id == owner_id,
+        )
+    )
+    ch = r.scalars().first()
+    if not ch:
+        return None
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(ch, field, value)
+    db.add(ch)
+    await db.commit()
+    await db.refresh(ch)
+    return ChannelPublic.model_validate(ch)
+
+
+async def delete_channel(
+    db: AsyncSession,
+    ch_id: uuid.UUID,
+    person_id: uuid.UUID,
+    owner_id: uuid.UUID,
+) -> bool:
+    r = await db.execute(
+        select(PersonChannel).where(
+            PersonChannel.id == ch_id,
+            PersonChannel.person_id == person_id,
+            PersonChannel.owner_id == owner_id,
+        )
+    )
+    ch = r.scalars().first()
+    if not ch:
+        return False
+    await db.delete(ch)
+    await db.commit()
+    return True
+
+
+# ── Address CRUD ───────────────────────────────────────────────────────────────
+
+
+async def create_address(
+    db: AsyncSession,
+    person_id: uuid.UUID,
+    owner_id: uuid.UUID,
+    data: AddressCreate,
+) -> AddressPublic:
+    country_id = None
+    if data.country:
+        country_id = await resolve_country_alpha2(db, data.country)
+    addr = PersonAddress(
+        person_id=person_id,
+        owner_id=owner_id,
+        type=data.type,
+        street=data.street,
+        city=data.city,
+        postal_code=data.postal_code,
+        country_id=country_id,
+        lat=data.lat,
+        lng=data.lng,
+        is_primary=data.is_primary,
+    )
+    db.add(addr)
+    await db.commit()
+    await db.refresh(addr)
+
+    country = None
+    if addr.country_id:
+        r = await db.execute(select(Country).where(Country.id == addr.country_id))
+        c = r.scalars().first()
+        if c:
+            country = CountrySlim.model_validate(c)
+
+    return AddressPublic(
+        id=addr.id,
+        type=addr.type,
+        street=addr.street,
+        city=addr.city,
+        postal_code=addr.postal_code,
+        country=country,
+        lat=addr.lat,
+        lng=addr.lng,
+        is_primary=addr.is_primary,
+    )
+
+
+async def update_address(
+    db: AsyncSession,
+    addr_id: uuid.UUID,
+    person_id: uuid.UUID,
+    owner_id: uuid.UUID,
+    data: AddressCreate,
+) -> AddressPublic | None:
+    r = await db.execute(
+        select(PersonAddress).where(
+            PersonAddress.id == addr_id,
+            PersonAddress.person_id == person_id,
+            PersonAddress.owner_id == owner_id,
+        )
+    )
+    addr = r.scalars().first()
+    if not addr:
+        return None
+
+    country_id = addr.country_id
+    if data.country is not None:
+        country_id = await resolve_country_alpha2(db, data.country) if data.country else None
+
+    for field in ("type", "street", "city", "postal_code", "lat", "lng", "is_primary"):
+        val = getattr(data, field, None)
+        if val is not None:
+            setattr(addr, field, val)
+    addr.country_id = country_id
+    db.add(addr)
+    await db.commit()
+    await db.refresh(addr)
+
+    country = None
+    if addr.country_id:
+        r = await db.execute(select(Country).where(Country.id == addr.country_id))
+        c = r.scalars().first()
+        if c:
+            country = CountrySlim.model_validate(c)
+
+    return AddressPublic(
+        id=addr.id,
+        type=addr.type,
+        street=addr.street,
+        city=addr.city,
+        postal_code=addr.postal_code,
+        country=country,
+        lat=addr.lat,
+        lng=addr.lng,
+        is_primary=addr.is_primary,
+    )
+
+
+async def delete_address(
+    db: AsyncSession,
+    addr_id: uuid.UUID,
+    person_id: uuid.UUID,
+    owner_id: uuid.UUID,
+) -> bool:
+    r = await db.execute(
+        select(PersonAddress).where(
+            PersonAddress.id == addr_id,
+            PersonAddress.person_id == person_id,
+            PersonAddress.owner_id == owner_id,
+        )
+    )
+    addr = r.scalars().first()
+    if not addr:
+        return False
+    await db.delete(addr)
+    await db.commit()
+    return True

@@ -10,6 +10,7 @@ class InteractionCreate(BaseModel):
     interaction_type_id: uuid.UUID | None = None
     term_id: uuid.UUID | None = None
     occurred_on: date | None = None
+    context: str | None = None  # "personal" | "professional" | "mixed"
     notes: str | None = None
     metadata_: dict[str, Any] | None = None
 
@@ -19,6 +20,7 @@ class InteractionUpdate(BaseModel):
     interaction_type_id: uuid.UUID | None = None
     term_id: uuid.UUID | None = None
     occurred_on: date | None = None
+    context: str | None = None  # "personal" | "professional" | "mixed"
     notes: str | None = None
     metadata_: dict[str, Any] | None = None
 
@@ -31,6 +33,7 @@ class InteractionPublicRead(BaseModel):
     term_id: uuid.UUID | None
     title: str
     occurred_on: date | None
+    context: str | None
     notes: str | None
     metadata_: dict[str, Any] | None
     created_at: datetime

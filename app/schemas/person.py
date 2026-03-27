@@ -34,6 +34,61 @@ class RelationshipPublic(BaseModel):
     created_at: datetime
 
 
+# ── Address schemas ────────────────────────────────────────────────────────────
+
+
+class AddressCreate(BaseModel):
+    type: str = "home"  # "home" | "work" | "other"
+    street: str | None = None
+    city: str | None = None
+    postal_code: str | None = None
+    country: str | None = None  # ISO alpha2 code
+    lat: float | None = None
+    lng: float | None = None
+    is_primary: bool = False
+
+
+class AddressPublic(BaseModel):
+    id: uuid.UUID
+    type: str
+    street: str | None
+    city: str | None
+    postal_code: str | None
+    country: CountrySlim | None
+    lat: float | None
+    lng: float | None
+    is_primary: bool
+
+    model_config = {"from_attributes": True}
+
+
+# ── Channel schemas ────────────────────────────────────────────────────────────
+
+
+class ChannelCreate(BaseModel):
+    type: str  # "email" | "mobile" | "phone" | "whatsapp" | "telegram" | "discord" | ...
+    value: str
+    label: str | None = None  # "work" | "personal" | etc.
+    is_primary: bool = False
+
+
+class ChannelUpdate(BaseModel):
+    type: str | None = None
+    value: str | None = None
+    label: str | None = None
+    is_primary: bool | None = None
+
+
+class ChannelPublic(BaseModel):
+    id: uuid.UUID
+    type: str
+    value: str
+    label: str | None
+    is_primary: bool
+
+    model_config = {"from_attributes": True}
+
+
 # ── Request schemas (flat — CRUD routes fields to the correct tables) ──────────
 
 
@@ -41,8 +96,8 @@ class PersonCreate(BaseModel):
     first_name: str
     last_name: str | None = None
     nickname: str | None = None
-    email: str | None = None
-    phone: str | None = None
+    channels: list[ChannelCreate] = []
+    addresses: list[AddressCreate] = []
     notes: str | None = None
     tags: list[str] = []  # slugs from "person-tags" vocabulary
     closeness_level: int | None = None
@@ -57,21 +112,7 @@ class PersonCreate(BaseModel):
     occupation: str | None = None  # slug from "occupations"
     company: str | None = None
     job_title: str | None = None
-    linkedin_url: str | None = None
-    phone_secondary: str | None = None
-    # social section
-    twitter_handle: str | None = None
-    instagram_handle: str | None = None
-    website_url: str | None = None
-    facebook_url: str | None = None
-    github_handle: str | None = None
-    discord_handle: str | None = None
-    telegram_handle: str | None = None
     # location section
-    address_home: str | None = None
-    address_work: str | None = None
-    city: str | None = None
-    country: str | None = None  # ISO alpha2 country code
     timezone: str | None = None  # IANA timezone name
     # context section
     how_we_met: str | None = None
@@ -79,6 +120,7 @@ class PersonCreate(BaseModel):
     last_contacted_on: date | None = None
     contact_frequency_days: int | None = None
     preferred_contact: str | None = None  # slug from "contact-channels"
+    relationship_nature: str | None = None  # "personal" | "professional" | "mixed"
     # physical section
     height_cm: float | None = None
     eye_color: str | None = None  # slug from "eye-colors"
@@ -92,14 +134,17 @@ class PersonCreate(BaseModel):
     communication_style: str | None = None  # slug from "communication-styles"
     # household sharing
     visibility: str = "private"  # "private" | "household"
+    # identity flags
+    is_placeholder: bool = False
+    is_bot: bool = False
 
 
 class PersonUpdate(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     nickname: str | None = None
-    email: str | None = None
-    phone: str | None = None
+    channels: list[ChannelCreate] | None = None  # replaces all channels
+    addresses: list[AddressCreate] | None = None  # replaces all addresses
     notes: str | None = None
     tags: list[str] | None = None
     closeness_level: int | None = None
@@ -114,21 +159,7 @@ class PersonUpdate(BaseModel):
     occupation: str | None = None
     company: str | None = None
     job_title: str | None = None
-    linkedin_url: str | None = None
-    phone_secondary: str | None = None
-    # social section
-    twitter_handle: str | None = None
-    instagram_handle: str | None = None
-    website_url: str | None = None
-    facebook_url: str | None = None
-    github_handle: str | None = None
-    discord_handle: str | None = None
-    telegram_handle: str | None = None
     # location section
-    address_home: str | None = None
-    address_work: str | None = None
-    city: str | None = None
-    country: str | None = None
     timezone: str | None = None
     # context section
     how_we_met: str | None = None
@@ -136,6 +167,7 @@ class PersonUpdate(BaseModel):
     last_contacted_on: date | None = None
     contact_frequency_days: int | None = None
     preferred_contact: str | None = None
+    relationship_nature: str | None = None  # "personal" | "professional" | "mixed"
     # physical section
     height_cm: float | None = None
     eye_color: str | None = None
@@ -149,6 +181,9 @@ class PersonUpdate(BaseModel):
     communication_style: str | None = None
     # household sharing
     visibility: str | None = None  # "private" | "household"
+    # identity flags
+    is_placeholder: bool | None = None
+    is_bot: bool | None = None
 
 
 # ── Response schemas ───────────────────────────────────────────────────────────
@@ -169,6 +204,8 @@ class PersonSlim(BaseModel):
     closeness_level: int | None
     visibility: str
     household_id: uuid.UUID | None
+    is_placeholder: bool
+    is_bot: bool
     created_at: datetime
     updated_at: datetime
 
@@ -193,30 +230,13 @@ class PersonProfessionalSection(BaseModel):
     occupation: TermSlim | None = None
     company: str | None = None
     job_title: str | None = None
-    linkedin_url: str | None = None
-    phone_secondary: str | None = None
-
-    model_config = {"from_attributes": True}
-
-
-class PersonSocialSection(BaseModel):
-    twitter_handle: str | None = None
-    instagram_handle: str | None = None
-    website_url: str | None = None
-    facebook_url: str | None = None
-    github_handle: str | None = None
-    discord_handle: str | None = None
-    telegram_handle: str | None = None
 
     model_config = {"from_attributes": True}
 
 
 class PersonLocationSection(BaseModel):
-    address_home: str | None = None
-    address_work: str | None = None
-    city: str | None = None
-    country: CountrySlim | None = None
     timezone: TimezonePublic | None = None
+    addresses: list[AddressPublic] = []
 
     model_config = {"from_attributes": True}
 
@@ -227,6 +247,7 @@ class PersonContextSection(BaseModel):
     last_contacted_on: date | None = None
     contact_frequency_days: int | None = None
     preferred_contact: TermSlim | None = None
+    relationship_nature: str | None = None  # "personal" | "professional" | "mixed"
 
     model_config = {"from_attributes": True}
 
@@ -255,11 +276,11 @@ class PersonExtended(PersonSlim):
 
     profile: PersonProfileSection | None = None
     professional: PersonProfessionalSection | None = None
-    social: PersonSocialSection | None = None
     location: PersonLocationSection | None = None
     context: PersonContextSection | None = None
     physical: PersonPhysicalSection | None = None
     personality: PersonPersonalitySection | None = None
+    channels: list[ChannelPublic] | None = None
 
 
 class PersonWithRelationships(PersonExtended):
@@ -268,3 +289,20 @@ class PersonWithRelationships(PersonExtended):
 
 # Alias kept for any stale internal references
 PersonPublicRead = PersonSlim
+
+
+# ── Schema metadata (field options for dropdowns) ─────────────────────────────
+
+
+class PersonFieldOptions(BaseModel):
+    prefixes: list[TermSlim]
+    genders: list[TermSlim]
+    occupations: list[TermSlim]
+    eye_colors: list[TermSlim]
+    hair_colors: list[TermSlim]
+    communication_styles: list[TermSlim]
+    tags: list[TermSlim]
+    relationship_types: list[TermSlim]
+    preferred_contact: list[TermSlim]
+    address_types: list[str]
+    channel_types: list[str]

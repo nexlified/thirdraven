@@ -50,6 +50,8 @@ def make_person(**kwargs) -> PersonSlim:
         tags=[],
         visibility="private",
         household_id=None,
+        is_placeholder=False,
+        is_bot=False,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
@@ -59,7 +61,7 @@ def make_person(**kwargs) -> PersonSlim:
 
 def make_person_extended(**kwargs) -> PersonExtended:
     """Return a PersonExtended with optional sections."""
-    section_keys = {"profile", "professional", "social", "location", "context"}
+    section_keys = {"profile", "professional", "location", "context", "physical", "personality", "channels"}
     slim_kwargs = {k: v for k, v in kwargs.items() if k not in section_keys}
     section_kwargs = {k: v for k, v in kwargs.items() if k in section_keys}
     slim = make_person(**slim_kwargs)
@@ -346,3 +348,26 @@ def test_create_relationship_source_not_found(app_client):
             json={"to_person_id": str(OTHER_ID), "label": "friend"},
         )
     assert resp.status_code == 404
+
+
+# ── GET /persons/schema ───────────────────────────────────────────────────────
+
+
+def test_get_person_schema(app_client):
+    with patch(
+        "app.api.v1.persons.list_vocab_terms",
+        new=AsyncMock(return_value=[]),
+    ):
+        resp = app_client.get("/api/v1/persons/schema")
+    assert resp.status_code == 200
+    data = resp.json()
+    for key in (
+        "prefixes", "genders", "occupations", "eye_colors", "hair_colors",
+        "communication_styles", "tags", "relationship_types", "preferred_contact",
+        "address_types", "channel_types",
+    ):
+        assert key in data
+        assert isinstance(data[key], list)
+    assert "home" in data["address_types"]
+    assert "email" in data["channel_types"]
+    assert "discord" in data["channel_types"]

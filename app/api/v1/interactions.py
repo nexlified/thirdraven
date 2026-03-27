@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -47,12 +47,13 @@ async def list_all(
     current_user: Annotated[User, Depends(get_current_user)],
     pagination: Annotated[PaginationParams, Depends(PaginationParams)],
     type_slug: str | None = None,
+    context: str | None = Query(default=None),
 ):
     person = await get_person(db, person_id, current_user.id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
     items, total = await list_interactions(
-        db, person_id, current_user.id, skip=pagination.skip, limit=pagination.limit, type_slug=type_slug
+        db, person_id, current_user.id, skip=pagination.skip, limit=pagination.limit, type_slug=type_slug, context=context
     )
     return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 

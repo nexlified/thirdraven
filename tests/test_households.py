@@ -178,6 +178,8 @@ def test_person_slim_household_fields():
         tags=[],
         visibility="household",
         household_id=HH_ID,
+        is_placeholder=False,
+        is_bot=False,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
@@ -201,6 +203,8 @@ def test_person_slim_private_defaults():
         tags=[],
         visibility="private",
         household_id=None,
+        is_placeholder=False,
+        is_bot=False,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )

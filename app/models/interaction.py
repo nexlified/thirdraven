@@ -16,6 +16,7 @@ class Interaction(SQLModel, table=True):
     term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
     title: str
     occurred_on: date | None = None
+    context: str | None = None  # "personal" | "professional" | "mixed"
     notes: str | None = None
     metadata_: dict[str, Any] | None = Field(
         default=None, sa_column=Column("metadata", JSON, nullable=True)

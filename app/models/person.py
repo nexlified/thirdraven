@@ -18,10 +18,6 @@ class Person(SQLModel, table=True):
     last_name: str | None = None
     nickname: str | None = None
 
-    # Primary contact
-    email: str | None = None
-    phone: str | None = None
-
     # CRM essentials
     notes: str | None = None
     closeness_level: int | None = None
@@ -29,3 +25,7 @@ class Person(SQLModel, table=True):
     # Household sharing
     household_id: uuid.UUID | None = Field(default=None, foreign_key="household.id", index=True)
     visibility: str = Field(default="private")  # "private" | "household"
+
+    # Identity flags
+    is_placeholder: bool = Field(default=False)  # auto-created from unrecognised sender
+    is_bot: bool = Field(default=False)  # automated/bot identity

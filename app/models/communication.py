@@ -13,7 +13,8 @@ class Communication(SQLModel, table=True):
 
     channel: str  # vocab slug: "email" | "whatsapp" | "telegram" etc.
     direction: str = "inbound"  # "inbound" | "outbound"
-    status: str = "raw"  # "raw" | "matched" | "unmatched" | "ignored"
+    status: str = "raw"  # "raw" | "matched" | "placeholder" | "unmatched" | "ignored"
+    is_bot: bool = Field(default=False)  # auto-set when matched person is_bot=True
 
     # Source identification
     sender_identifier: str | None = None  # email addr, phone no., @handle

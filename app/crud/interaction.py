@@ -46,6 +46,7 @@ async def list_interactions(
     skip: int = 0,
     limit: int = 50,
     type_slug: str | None = None,
+    context: str | None = None,
 ) -> tuple[list[Interaction], int]:
     base = select(Interaction).where(
         Interaction.person_id == person_id,
@@ -56,6 +57,8 @@ async def list_interactions(
             Term,
             Interaction.interaction_type_id == Term.id,
         ).where(Term.slug == type_slug)
+    if context is not None:
+        base = base.where(Interaction.context == context)
     total = (
         await db.execute(select(func.count()).select_from(base.subquery()))
     ).scalar_one()
