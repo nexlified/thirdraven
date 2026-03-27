@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.deps import get_current_user
+from app.core.deps import PaginationParams, get_current_user
 from app.crud.event import (
     add_event_person,
     create_event,
@@ -17,6 +17,7 @@ from app.crud.event import (
     update_event,
 )
 from app.models.user import User
+from app.schemas.paginated import Paginated
 from app.schemas.event import (
     EventCreate,
     EventPersonCreate,
@@ -45,14 +46,14 @@ async def create(
     return await create_event(db, current_user.id, data)
 
 
-@events_router.get("/", response_model=list[EventPublic])
+@events_router.get("/", response_model=Paginated[EventPublic])
 async def list_all(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: int = 0,
-    limit: int = 50,
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
 ):
-    return await list_events(db, current_user.id, skip=skip, limit=limit)
+    items, total = await list_events(db, current_user.id, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @events_router.get("/{event_id}", response_model=EventPublic)

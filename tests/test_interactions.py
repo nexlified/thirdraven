@@ -191,12 +191,14 @@ def test_list_interactions_success(app_client):
         patch("app.api.v1.interactions.get_person", new=AsyncMock(return_value=person)),
         patch(
             "app.api.v1.interactions.list_interactions",
-            new=AsyncMock(return_value=interactions),
+            new=AsyncMock(return_value=(interactions, 2)),
         ),
     ):
         resp = app_client.get(f"{BASE}/")
     assert resp.status_code == 200
-    assert len(resp.json()) == 2
+    data = resp.json()
+    assert data["total"] == 2
+    assert len(data["items"]) == 2
 
 
 def test_list_interactions_empty(app_client):
@@ -205,12 +207,14 @@ def test_list_interactions_empty(app_client):
         patch("app.api.v1.interactions.get_person", new=AsyncMock(return_value=person)),
         patch(
             "app.api.v1.interactions.list_interactions",
-            new=AsyncMock(return_value=[]),
+            new=AsyncMock(return_value=([], 0)),
         ),
     ):
         resp = app_client.get(f"{BASE}/")
     assert resp.status_code == 200
-    assert resp.json() == []
+    data = resp.json()
+    assert data["items"] == []
+    assert data["total"] == 0
 
 
 def test_list_interactions_person_not_found(app_client):

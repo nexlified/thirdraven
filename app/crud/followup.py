@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -51,16 +52,20 @@ async def list_followups(
     pending_only: bool = False,
     skip: int = 0,
     limit: int = 50,
-) -> list[FollowUpPublic]:
-    q = select(PersonFollowUp).where(
+) -> tuple[list[FollowUpPublic], int]:
+    base = select(PersonFollowUp).where(
         PersonFollowUp.person_id == person_id,
         PersonFollowUp.owner_id == owner_id,
     )
     if pending_only:
-        q = q.where(PersonFollowUp.cleared_at.is_(None))
-    q = q.order_by(PersonFollowUp.due_on.asc().nulls_last()).offset(skip).limit(limit)
-    r = await db.execute(q)
-    return [_build(row) for row in r.scalars().all()]
+        base = base.where(PersonFollowUp.cleared_at.is_(None))
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
+    r = await db.execute(
+        base.order_by(PersonFollowUp.due_on.asc().nulls_last()).offset(skip).limit(limit)
+    )
+    return [_build(row) for row in r.scalars().all()], total
 
 
 async def update_followup(

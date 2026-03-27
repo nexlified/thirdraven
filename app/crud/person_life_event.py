@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -95,19 +96,21 @@ async def list_life_events(
     owner_id: uuid.UUID,
     skip: int = 0,
     limit: int = 50,
-) -> list[LifeEventPublic]:
+) -> tuple[list[LifeEventPublic], int]:
+    base = select(PersonLifeEvent).where(
+        PersonLifeEvent.person_id == person_id,
+        PersonLifeEvent.owner_id == owner_id,
+    )
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
     r = await db.execute(
-        select(PersonLifeEvent)
-        .where(
-            PersonLifeEvent.person_id == person_id,
-            PersonLifeEvent.owner_id == owner_id,
-        )
-        .order_by(PersonLifeEvent.occurred_on.asc().nulls_last())
+        base.order_by(PersonLifeEvent.occurred_on.asc().nulls_last())
         .offset(skip)
         .limit(limit)
     )
     rows = r.scalars().all()
-    return [await _build_life_event_public(db, row) for row in rows]
+    return [await _build_life_event_public(db, row) for row in rows], total
 
 
 async def update_life_event(

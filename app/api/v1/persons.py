@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.deps import get_current_user
+from app.core.deps import PaginationParams, get_current_user
 from app.crud.context_package import get_context_package, get_relationship_health
 from app.crud.household import get_user_household_id
 from app.crud.person import (
@@ -28,6 +28,7 @@ from app.schemas.person import (
     RelationshipCreate,
     RelationshipPublic,
 )
+from app.schemas.paginated import Paginated
 from app.schemas.reference import PersonTermCreate, PersonTermPublic
 
 router = APIRouter(prefix="/persons", tags=["persons"])
@@ -43,15 +44,17 @@ async def create(
     return await create_person(db, current_user.id, data, household_id=household_id)
 
 
-@router.get("/", response_model=list[PersonSlim])
+@router.get("/", response_model=Paginated[PersonSlim])
 async def list_all(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: int = 0,
-    limit: int = 50,
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
 ):
     household_id = await get_user_household_id(db, current_user.id)
-    return await list_persons(db, current_user.id, skip=skip, limit=limit, household_id=household_id)
+    items, total = await list_persons(
+        db, current_user.id, skip=pagination.skip, limit=pagination.limit, household_id=household_id
+    )
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/relationship-health", response_model=list[RelationshipHealthEntry])

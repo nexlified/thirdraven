@@ -148,23 +148,27 @@ def test_create_record_unauthenticated(unauthed_client):
 def test_list_records_returns_list(app_client):
     records = [make_record(), make_record(id=uuid.uuid4(), title="Passport")]
     with patch(
-        "app.api.v1.records.list_records", new=AsyncMock(return_value=records)
+        "app.api.v1.records.list_records", new=AsyncMock(return_value=(records, 2))
     ):
         resp = app_client.get("/api/v1/records/")
     assert resp.status_code == 200
-    assert len(resp.json()) == 2
+    data = resp.json()
+    assert data["total"] == 2
+    assert len(data["items"]) == 2
 
 
 def test_list_records_empty(app_client):
-    with patch("app.api.v1.records.list_records", new=AsyncMock(return_value=[])):
+    with patch("app.api.v1.records.list_records", new=AsyncMock(return_value=([], 0))):
         resp = app_client.get("/api/v1/records/")
     assert resp.status_code == 200
-    assert resp.json() == []
+    data = resp.json()
+    assert data["items"] == []
+    assert data["total"] == 0
 
 
 def test_list_records_passes_record_type_slug_kwarg(app_client):
     """Query param `record_type` is forwarded to CRUD as `record_type_slug`."""
-    mock_fn = AsyncMock(return_value=[])
+    mock_fn = AsyncMock(return_value=([], 0))
     with patch("app.api.v1.records.list_records", new=mock_fn):
         app_client.get("/api/v1/records/?record_type=license-driving")
     kwargs = mock_fn.call_args.kwargs
@@ -172,7 +176,7 @@ def test_list_records_passes_record_type_slug_kwarg(app_client):
 
 
 def test_list_records_passes_asset_id_filter(app_client):
-    mock_fn = AsyncMock(return_value=[])
+    mock_fn = AsyncMock(return_value=([], 0))
     with patch("app.api.v1.records.list_records", new=mock_fn):
         app_client.get(f"/api/v1/records/?asset_id={ASSET_ID}")
     kwargs = mock_fn.call_args.kwargs
@@ -180,7 +184,7 @@ def test_list_records_passes_asset_id_filter(app_client):
 
 
 def test_list_records_passes_person_id_filter(app_client):
-    mock_fn = AsyncMock(return_value=[])
+    mock_fn = AsyncMock(return_value=([], 0))
     with patch("app.api.v1.records.list_records", new=mock_fn):
         app_client.get(f"/api/v1/records/?person_id={PERSON_ID}")
     kwargs = mock_fn.call_args.kwargs
@@ -188,7 +192,7 @@ def test_list_records_passes_person_id_filter(app_client):
 
 
 def test_list_records_passes_expires_before_filter(app_client):
-    mock_fn = AsyncMock(return_value=[])
+    mock_fn = AsyncMock(return_value=([], 0))
     with patch("app.api.v1.records.list_records", new=mock_fn):
         app_client.get("/api/v1/records/?expires_before=2026-12-31")
     kwargs = mock_fn.call_args.kwargs

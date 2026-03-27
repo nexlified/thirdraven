@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.deps import get_current_user
+from app.core.deps import PaginationParams, get_current_user
 from app.crud.contact import (
     add_relationship,
     create_contact,
@@ -16,6 +16,7 @@ from app.crud.contact import (
     update_contact,
 )
 from app.models.user import User
+from app.schemas.paginated import Paginated
 from app.schemas.contact import (
     ContactCreate,
     ContactPublicRead,
@@ -37,14 +38,14 @@ async def create(
     return await create_contact(db, current_user.id, data)
 
 
-@router.get("/", response_model=list[ContactPublicRead])
+@router.get("/", response_model=Paginated[ContactPublicRead])
 async def list_all(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: int = 0,
-    limit: int = 50,
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
 ):
-    return await list_contacts(db, current_user.id, skip=skip, limit=limit)
+    items, total = await list_contacts(db, current_user.id, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/{contact_id}", response_model=ContactWithRelationships)

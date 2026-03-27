@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.deps import get_current_user
+from app.core.deps import PaginationParams, get_current_user
+from app.schemas.paginated import Paginated
 from app.crud.tracked_record import (
     create_record,
     delete_record,
@@ -29,27 +30,27 @@ async def create(
     return await create_record(db, current_user.id, data)
 
 
-@router.get("/", response_model=list[RecordPublic])
+@router.get("/", response_model=Paginated[RecordPublic])
 async def list_all(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: int = 0,
-    limit: int = 50,
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
     record_type: str | None = None,
     asset_id: uuid.UUID | None = None,
     person_id: uuid.UUID | None = None,
     expires_before: date | None = None,
 ):
-    return await list_records(
+    items, total = await list_records(
         db,
         current_user.id,
-        skip=skip,
-        limit=limit,
+        skip=pagination.skip,
+        limit=pagination.limit,
         record_type_slug=record_type,
         asset_id=asset_id,
         person_id=person_id,
         expires_before=expires_before,
     )
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/{record_id}", response_model=RecordPublic)

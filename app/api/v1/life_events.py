@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.deps import get_current_user
+from app.core.deps import PaginationParams, get_current_user
+from app.schemas.paginated import Paginated
 from app.crud.person import get_person
 from app.crud.person_life_event import (
     create_life_event,
@@ -55,20 +56,20 @@ async def create_event(
     return await create_life_event(db, person_id, current_user.id, data)
 
 
-@life_events_router.get("/", response_model=list[LifeEventPublic])
+@life_events_router.get("/", response_model=Paginated[LifeEventPublic])
 async def list_events(
     person_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: int = 0,
-    limit: int = 50,
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
 ):
     person = await get_person(db, person_id, current_user.id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
-    return await list_life_events(
-        db, person_id, current_user.id, skip=skip, limit=limit
+    items, total = await list_life_events(
+        db, person_id, current_user.id, skip=pagination.skip, limit=pagination.limit
     )
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @life_events_router.get("/{event_id}", response_model=LifeEventPublic)

@@ -1,6 +1,7 @@
 import uuid
 from datetime import date, datetime
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -100,28 +101,30 @@ async def list_records(
     asset_id: uuid.UUID | None = None,
     person_id: uuid.UUID | None = None,
     expires_before: date | None = None,
-) -> list[RecordPublic]:
-    q = select(TrackedRecord).where(
+) -> tuple[list[RecordPublic], int]:
+    base = select(TrackedRecord).where(
         TrackedRecord.owner_id == owner_id,
         TrackedRecord.deleted_at.is_(None),
     )
     if record_type_slug is not None:
         term_id = await resolve_optional_term_slug(db, "record-types", record_type_slug)
         if term_id:
-            q = q.where(TrackedRecord.record_type_id == term_id)
+            base = base.where(TrackedRecord.record_type_id == term_id)
     if asset_id is not None:
-        q = q.where(TrackedRecord.asset_id == asset_id)
+        base = base.where(TrackedRecord.asset_id == asset_id)
     if person_id is not None:
-        q = q.where(TrackedRecord.person_id == person_id)
+        base = base.where(TrackedRecord.person_id == person_id)
     if expires_before is not None:
-        q = q.where(TrackedRecord.expires_on <= expires_before)
-    q = (
-        q.order_by(TrackedRecord.expires_on.asc().nulls_last())
+        base = base.where(TrackedRecord.expires_on <= expires_before)
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
+    r = await db.execute(
+        base.order_by(TrackedRecord.expires_on.asc().nulls_last())
         .offset(skip)
         .limit(limit)
     )
-    r = await db.execute(q)
-    return [await _build(db, row) for row in r.scalars().all()]
+    return [await _build(db, row) for row in r.scalars().all()], total
 
 
 async def update_record(

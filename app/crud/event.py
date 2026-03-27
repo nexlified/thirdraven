@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -90,15 +91,15 @@ async def get_event(
 
 async def list_events(
     db: AsyncSession, owner_id: uuid.UUID, skip: int = 0, limit: int = 50
-) -> list[EventPublic]:
+) -> tuple[list[EventPublic], int]:
+    base = select(Event).where(Event.owner_id == owner_id)
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
     r = await db.execute(
-        select(Event)
-        .where(Event.owner_id == owner_id)
-        .order_by(Event.occurred_on.desc().nulls_last())
-        .offset(skip)
-        .limit(limit)
+        base.order_by(Event.occurred_on.desc().nulls_last()).offset(skip).limit(limit)
     )
-    return [await _build_event_public(db, row) for row in r.scalars().all()]
+    return [await _build_event_public(db, row) for row in r.scalars().all()], total
 
 
 async def update_event(

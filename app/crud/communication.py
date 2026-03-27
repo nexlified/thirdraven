@@ -1,6 +1,7 @@
 import uuid
 from datetime import date, datetime
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -277,21 +278,23 @@ async def list_communications(
     channel: str | None = None,
     status: str | None = None,
     person_id: uuid.UUID | None = None,
-) -> list[CommPublic]:
-    q = select(Communication).where(Communication.owner_id == owner_id)
+) -> tuple[list[CommPublic], int]:
+    base = select(Communication).where(Communication.owner_id == owner_id)
     if channel:
-        q = q.where(Communication.channel == channel)
+        base = base.where(Communication.channel == channel)
     if status:
-        q = q.where(Communication.status == status)
+        base = base.where(Communication.status == status)
     if person_id:
-        q = q.where(Communication.person_id == person_id)
-    q = (
-        q.order_by(Communication.communicated_at.desc().nulls_last())
+        base = base.where(Communication.person_id == person_id)
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
+    r = await db.execute(
+        base.order_by(Communication.communicated_at.desc().nulls_last())
         .offset(skip)
         .limit(limit)
     )
-    r = await db.execute(q)
-    return [CommPublic.model_validate(row) for row in r.scalars().all()]
+    return [CommPublic.model_validate(row) for row in r.scalars().all()], total
 
 
 async def update_communication(

@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -45,19 +46,23 @@ async def list_interactions(
     skip: int = 0,
     limit: int = 50,
     type_slug: str | None = None,
-) -> list[Interaction]:
-    query = select(Interaction).where(
+) -> tuple[list[Interaction], int]:
+    base = select(Interaction).where(
         Interaction.person_id == person_id,
         Interaction.owner_id == owner_id,
     )
     if type_slug:
-        query = query.join(
+        base = base.join(
             Term,
             Interaction.interaction_type_id == Term.id,
         ).where(Term.slug == type_slug)
-    query = query.offset(skip).limit(limit)
-    result = await db.execute(query)
-    return list(result.scalars().all())
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
+    result = await db.execute(
+        base.order_by(Interaction.created_at.desc()).offset(skip).limit(limit)
+    )
+    return list(result.scalars().all()), total
 
 
 async def update_interaction(

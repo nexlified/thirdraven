@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.deps import get_current_user
+from app.core.deps import PaginationParams, get_current_user
 from app.crud.organization import (
     create_org,
     get_org,
@@ -20,6 +20,7 @@ from app.crud.organization import (
 from app.crud.household import get_user_household_id
 from app.crud.person import get_person
 from app.models.user import User
+from app.schemas.paginated import Paginated
 from app.schemas.organization import (
     OrgCreate,
     OrgPublic,
@@ -48,15 +49,17 @@ async def create(
     return await create_org(db, current_user.id, data, household_id=household_id)
 
 
-@orgs_router.get("/", response_model=list[OrgPublic])
+@orgs_router.get("/", response_model=Paginated[OrgPublic])
 async def list_all(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: int = 0,
-    limit: int = 50,
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
 ):
     household_id = await get_user_household_id(db, current_user.id)
-    return await list_orgs(db, current_user.id, skip=skip, limit=limit, household_id=household_id)
+    items, total = await list_orgs(
+        db, current_user.id, skip=pagination.skip, limit=pagination.limit, household_id=household_id
+    )
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @orgs_router.get("/{org_id}", response_model=OrgPublic)

@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -104,23 +105,26 @@ async def list_notes(
     person_id: uuid.UUID | None = None,
     asset_id: uuid.UUID | None = None,
     subscription_id: uuid.UUID | None = None,
-) -> list[NotePublicRead]:
-    query = select(Note).where(Note.owner_id == owner_id, Note.deleted_at.is_(None))
+) -> tuple[list[NotePublicRead], int]:
+    base = select(Note).where(Note.owner_id == owner_id, Note.deleted_at.is_(None))
 
     if pinned is not None:
-        query = query.where(Note.pinned == pinned)
+        base = base.where(Note.pinned == pinned)
     if person_id is not None:
-        query = query.where(Note.person_id == person_id)
+        base = base.where(Note.person_id == person_id)
     if asset_id is not None:
-        query = query.where(Note.asset_id == asset_id)
+        base = base.where(Note.asset_id == asset_id)
     if subscription_id is not None:
-        query = query.where(Note.subscription_id == subscription_id)
+        base = base.where(Note.subscription_id == subscription_id)
 
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
     result = await db.execute(
-        query.order_by(Note.updated_at.desc()).offset(skip).limit(limit)
+        base.order_by(Note.updated_at.desc()).offset(skip).limit(limit)
     )
     notes = result.scalars().all()
-    return [await _build_note_public(db, n) for n in notes]
+    return [await _build_note_public(db, n) for n in notes], total
 
 
 async def update_note(

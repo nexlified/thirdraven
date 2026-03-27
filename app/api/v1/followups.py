@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.deps import get_current_user
+from app.core.deps import PaginationParams, get_current_user
 from app.crud.followup import (
     create_followup,
     delete_followup,
@@ -15,6 +15,7 @@ from app.crud.followup import (
 )
 from app.crud.person import get_person
 from app.models.user import User
+from app.schemas.paginated import Paginated
 from app.schemas.followup import FollowUpCreate, FollowUpPublic, FollowUpUpdate
 
 router = APIRouter(
@@ -35,22 +36,22 @@ async def create(
     return await create_followup(db, person_id, current_user.id, data)
 
 
-@router.get("/", response_model=list[FollowUpPublic])
+@router.get("/", response_model=Paginated[FollowUpPublic])
 async def list_all(
     person_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: int = 0,
-    limit: int = 50,
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
     pending_only: bool = False,
 ):
     person = await get_person(db, person_id, current_user.id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
-    return await list_followups(
+    items, total = await list_followups(
         db, person_id, current_user.id,
-        pending_only=pending_only, skip=skip, limit=limit,
+        pending_only=pending_only, skip=pagination.skip, limit=pagination.limit,
     )
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/{followup_id}", response_model=FollowUpPublic)

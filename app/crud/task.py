@@ -1,6 +1,7 @@
 import uuid
 from datetime import date, datetime
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -110,27 +111,30 @@ async def list_tasks(
     person_id: uuid.UUID | None = None,
     asset_id: uuid.UUID | None = None,
     subscription_id: uuid.UUID | None = None,
-) -> list[TaskPublicRead]:
-    query = select(Task).where(Task.owner_id == owner_id, Task.deleted_at.is_(None))
+) -> tuple[list[TaskPublicRead], int]:
+    base = select(Task).where(Task.owner_id == owner_id, Task.deleted_at.is_(None))
 
     if status is not None:
-        query = query.where(Task.status == status)
+        base = base.where(Task.status == status)
     if priority is not None:
-        query = query.where(Task.priority == priority)
+        base = base.where(Task.priority == priority)
     if person_id is not None:
-        query = query.where(Task.person_id == person_id)
+        base = base.where(Task.person_id == person_id)
     if asset_id is not None:
-        query = query.where(Task.asset_id == asset_id)
+        base = base.where(Task.asset_id == asset_id)
     if subscription_id is not None:
-        query = query.where(Task.subscription_id == subscription_id)
+        base = base.where(Task.subscription_id == subscription_id)
 
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
     result = await db.execute(
-        query.order_by(Task.due_date.asc().nullslast(), Task.created_at.desc())
+        base.order_by(Task.due_date.asc().nullslast(), Task.created_at.desc())
         .offset(skip)
         .limit(limit)
     )
     tasks = result.scalars().all()
-    return [await _build_task_public(db, t) for t in tasks]
+    return [await _build_task_public(db, t) for t in tasks], total
 
 
 async def update_task(

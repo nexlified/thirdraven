@@ -160,17 +160,21 @@ def test_create_person_with_extension_fields(app_client):
 
 def test_list_persons_returns_list(app_client):
     persons = [make_person(), make_person(id=uuid.uuid4(), first_name="Bob")]
-    with patch("app.api.v1.persons.list_persons", new=AsyncMock(return_value=persons)):
+    with patch("app.api.v1.persons.list_persons", new=AsyncMock(return_value=(persons, 2))):
         resp = app_client.get("/api/v1/persons/")
     assert resp.status_code == 200
-    assert len(resp.json()) == 2
+    data = resp.json()
+    assert data["total"] == 2
+    assert len(data["items"]) == 2
 
 
 def test_list_persons_empty(app_client):
-    with patch("app.api.v1.persons.list_persons", new=AsyncMock(return_value=[])):
+    with patch("app.api.v1.persons.list_persons", new=AsyncMock(return_value=([], 0))):
         resp = app_client.get("/api/v1/persons/")
     assert resp.status_code == 200
-    assert resp.json() == []
+    data = resp.json()
+    assert data["items"] == []
+    assert data["total"] == 0
 
 
 # ── GET /persons/{person_id} ───────────────────────────────────────────────────

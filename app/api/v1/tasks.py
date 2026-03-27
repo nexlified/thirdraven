@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.deps import get_current_user
+from app.core.deps import PaginationParams, get_current_user
 from app.crud.task import (
     create_task,
     get_task_public,
@@ -15,6 +15,7 @@ from app.crud.task import (
     update_task,
 )
 from app.models.user import User
+from app.schemas.paginated import Paginated
 from app.schemas.task import TaskCreate, TaskPublicRead, TaskSummary, TaskUpdate
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -37,29 +38,29 @@ async def summary(
     return await get_task_summary(db, current_user.id)
 
 
-@router.get("/", response_model=list[TaskPublicRead])
+@router.get("/", response_model=Paginated[TaskPublicRead])
 async def list_all(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: int = 0,
-    limit: int = 50,
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
     status: str | None = None,
     priority: str | None = None,
     person_id: uuid.UUID | None = None,
     asset_id: uuid.UUID | None = None,
     subscription_id: uuid.UUID | None = None,
 ):
-    return await list_tasks(
+    items, total = await list_tasks(
         db,
         current_user.id,
-        skip=skip,
-        limit=limit,
+        skip=pagination.skip,
+        limit=pagination.limit,
         status=status,
         priority=priority,
         person_id=person_id,
         asset_id=asset_id,
         subscription_id=subscription_id,
     )
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/{task_id}", response_model=TaskPublicRead)

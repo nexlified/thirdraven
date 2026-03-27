@@ -156,25 +156,29 @@ def test_create_contact_with_optional_fields(app_client):
 def test_list_contacts_returns_list(app_client):
     contacts = [make_contact(), make_contact(id=uuid.uuid4(), first_name="Bob")]
     with patch(
-        "app.api.v1.contacts.list_contacts", new=AsyncMock(return_value=contacts)
+        "app.api.v1.contacts.list_contacts", new=AsyncMock(return_value=(contacts, 2))
     ):
         resp = app_client.get("/api/v1/contacts/")
     assert resp.status_code == 200
-    assert len(resp.json()) == 2
+    data = resp.json()
+    assert data["total"] == 2
+    assert len(data["items"]) == 2
 
 
 def test_list_contacts_empty(app_client):
     with patch(
-        "app.api.v1.contacts.list_contacts", new=AsyncMock(return_value=[])
+        "app.api.v1.contacts.list_contacts", new=AsyncMock(return_value=([], 0))
     ):
         resp = app_client.get("/api/v1/contacts/")
     assert resp.status_code == 200
-    assert resp.json() == []
+    data = resp.json()
+    assert data["items"] == []
+    assert data["total"] == 0
 
 
 def test_list_contacts_pagination_params(app_client):
     with patch(
-        "app.api.v1.contacts.list_contacts", new=AsyncMock(return_value=[])
+        "app.api.v1.contacts.list_contacts", new=AsyncMock(return_value=([], 0))
     ) as mock_list:
         resp = app_client.get("/api/v1/contacts/?skip=10&limit=5")
     assert resp.status_code == 200

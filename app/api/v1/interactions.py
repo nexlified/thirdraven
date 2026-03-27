@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.deps import get_current_user
+from app.core.deps import PaginationParams, get_current_user
 from app.crud.interaction import (
     create_interaction,
     delete_interaction,
@@ -15,6 +15,7 @@ from app.crud.interaction import (
 )
 from app.crud.person import get_person
 from app.models.user import User
+from app.schemas.paginated import Paginated
 from app.schemas.interaction import (
     InteractionCreate,
     InteractionPublicRead,
@@ -39,21 +40,21 @@ async def log_interaction(
     return await create_interaction(db, person_id, current_user.id, data)
 
 
-@router.get("/", response_model=list[InteractionPublicRead])
+@router.get("/", response_model=Paginated[InteractionPublicRead])
 async def list_all(
     person_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: int = 0,
-    limit: int = 50,
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
     type_slug: str | None = None,
 ):
     person = await get_person(db, person_id, current_user.id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
-    return await list_interactions(
-        db, person_id, current_user.id, skip=skip, limit=limit, type_slug=type_slug
+    items, total = await list_interactions(
+        db, person_id, current_user.id, skip=pagination.skip, limit=pagination.limit, type_slug=type_slug
     )
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/{interaction_id}", response_model=InteractionPublicRead)

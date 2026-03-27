@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -34,14 +35,15 @@ async def get_contact(
 
 async def list_contacts(
     db: AsyncSession, owner_id: uuid.UUID, skip: int = 0, limit: int = 50
-) -> list[Contact]:
+) -> tuple[list[Contact], int]:
+    base = select(Contact).where(Contact.owner_id == owner_id, Contact.deleted_at.is_(None))
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
     result = await db.execute(
-        select(Contact)
-        .where(Contact.owner_id == owner_id, Contact.deleted_at.is_(None))
-        .offset(skip)
-        .limit(limit)
+        base.order_by(Contact.created_at.desc()).offset(skip).limit(limit)
     )
-    return list(result.scalars().all())
+    return list(result.scalars().all()), total
 
 
 async def update_contact(

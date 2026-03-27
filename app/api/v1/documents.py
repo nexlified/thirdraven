@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.deps import get_current_user
+from app.core.deps import PaginationParams, get_current_user
+from app.schemas.paginated import Paginated
 from app.crud.document import (
     create_document,
     delete_document,
@@ -28,23 +29,23 @@ async def create(
     return await create_document(db, current_user.id, data)
 
 
-@router.get("/", response_model=list[DocumentPublic])
+@router.get("/", response_model=Paginated[DocumentPublic])
 async def list_all(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: int = 0,
-    limit: int = 50,
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
     entity_type: str | None = None,
     entity_id: uuid.UUID | None = None,
 ):
-    return await list_documents(
+    items, total = await list_documents(
         db,
         current_user.id,
-        skip=skip,
-        limit=limit,
+        skip=pagination.skip,
+        limit=pagination.limit,
         entity_type=entity_type,
         entity_id=entity_id,
     )
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/{doc_id}", response_model=DocumentPublic)

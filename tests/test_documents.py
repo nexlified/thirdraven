@@ -156,24 +156,28 @@ def test_create_document_unauthenticated(unauthed_client):
 def test_list_documents_returns_list(app_client):
     docs = [make_document(), make_document(id=uuid.uuid4(), title="Insurance Card")]
     with patch(
-        "app.api.v1.documents.list_documents", new=AsyncMock(return_value=docs)
+        "app.api.v1.documents.list_documents", new=AsyncMock(return_value=(docs, 2))
     ):
         resp = app_client.get("/api/v1/documents/")
     assert resp.status_code == 200
-    assert len(resp.json()) == 2
+    data = resp.json()
+    assert data["total"] == 2
+    assert len(data["items"]) == 2
 
 
 def test_list_documents_empty(app_client):
     with patch(
-        "app.api.v1.documents.list_documents", new=AsyncMock(return_value=[])
+        "app.api.v1.documents.list_documents", new=AsyncMock(return_value=([], 0))
     ):
         resp = app_client.get("/api/v1/documents/")
     assert resp.status_code == 200
-    assert resp.json() == []
+    data = resp.json()
+    assert data["items"] == []
+    assert data["total"] == 0
 
 
 def test_list_documents_passes_entity_type_filter(app_client):
-    mock_fn = AsyncMock(return_value=[])
+    mock_fn = AsyncMock(return_value=([], 0))
     with patch("app.api.v1.documents.list_documents", new=mock_fn):
         app_client.get("/api/v1/documents/?entity_type=asset")
     kwargs = mock_fn.call_args.kwargs
@@ -181,7 +185,7 @@ def test_list_documents_passes_entity_type_filter(app_client):
 
 
 def test_list_documents_passes_entity_id_filter(app_client):
-    mock_fn = AsyncMock(return_value=[])
+    mock_fn = AsyncMock(return_value=([], 0))
     with patch("app.api.v1.documents.list_documents", new=mock_fn):
         app_client.get(f"/api/v1/documents/?entity_id={ENTITY_ID}")
     kwargs = mock_fn.call_args.kwargs

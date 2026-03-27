@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.deps import get_current_user
+from app.core.deps import PaginationParams, get_current_user
 from app.crud.asset import (
     create_asset,
     get_asset_public,
@@ -14,6 +14,7 @@ from app.crud.asset import (
     update_asset,
 )
 from app.models.user import User
+from app.schemas.paginated import Paginated
 from app.schemas.asset import AssetCreate, AssetPublicRead, AssetUpdate
 
 router = APIRouter(prefix="/assets", tags=["assets"])
@@ -28,18 +29,18 @@ async def create(
     return await create_asset(db, current_user.id, data)
 
 
-@router.get("/", response_model=list[AssetPublicRead])
+@router.get("/", response_model=Paginated[AssetPublicRead])
 async def list_all(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: int = 0,
-    limit: int = 50,
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
     category: str | None = None,
     status: str | None = None,
 ):
-    return await list_assets(
-        db, current_user.id, skip=skip, limit=limit, category=category, status=status
+    items, total = await list_assets(
+        db, current_user.id, skip=pagination.skip, limit=pagination.limit, category=category, status=status
     )
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/{asset_id}", response_model=AssetPublicRead)

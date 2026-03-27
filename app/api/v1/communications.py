@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.deps import get_current_user
+from app.core.deps import PaginationParams, get_current_user
+from app.schemas.paginated import Paginated
 from app.crud.communication import (
     create_communication,
     delete_communication,
@@ -47,25 +48,25 @@ async def create(
     return await create_communication(db, current_user.id, data)
 
 
-@router.get("/", response_model=list[CommPublic])
+@router.get("/", response_model=Paginated[CommPublic])
 async def list_all(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: int = 0,
-    limit: int = 50,
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
     channel: str | None = None,
     status: str | None = None,
     person_id: uuid.UUID | None = None,
 ):
-    return await list_communications(
+    items, total = await list_communications(
         db,
         current_user.id,
-        skip=skip,
-        limit=limit,
+        skip=pagination.skip,
+        limit=pagination.limit,
         channel=channel,
         status=status,
         person_id=person_id,
     )
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/{comm_id}", response_model=CommPublic)

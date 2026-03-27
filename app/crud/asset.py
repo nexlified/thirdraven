@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -124,20 +125,23 @@ async def list_assets(
     limit: int = 50,
     category: str | None = None,
     status: str | None = None,
-) -> list[AssetPublicRead]:
-    query = select(Asset).where(Asset.owner_id == owner_id, Asset.deleted_at.is_(None))
+) -> tuple[list[AssetPublicRead], int]:
+    base = select(Asset).where(Asset.owner_id == owner_id, Asset.deleted_at.is_(None))
 
     if category is not None:
         cat_id = await resolve_term_slug(db, "asset-categories", category)
-        query = query.where(Asset.category_term_id == cat_id)
+        base = base.where(Asset.category_term_id == cat_id)
 
     if status is not None:
         stat_id = await resolve_term_slug(db, "asset-statuses", status)
-        query = query.where(Asset.status_term_id == stat_id)
+        base = base.where(Asset.status_term_id == stat_id)
 
-    result = await db.execute(query.offset(skip).limit(limit))
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
+    result = await db.execute(base.order_by(Asset.created_at.desc()).offset(skip).limit(limit))
     assets = result.scalars().all()
-    return [await _build_asset_public(db, a) for a in assets]
+    return [await _build_asset_public(db, a) for a in assets], total
 
 
 async def update_asset(

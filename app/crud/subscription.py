@@ -2,6 +2,7 @@ import uuid
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -167,24 +168,29 @@ async def list_subscriptions(
     status: str | None = None,
     category: str | None = None,
     billing_cycle: str | None = None,
-) -> list[SubscriptionPublicRead]:
-    query = select(Subscription).where(
+) -> tuple[list[SubscriptionPublicRead], int]:
+    base = select(Subscription).where(
         Subscription.owner_id == owner_id,
         Subscription.deleted_at.is_(None),
     )
 
     if status is not None:
-        query = query.where(Subscription.status == status)
+        base = base.where(Subscription.status == status)
     if billing_cycle is not None:
-        query = query.where(Subscription.billing_cycle == billing_cycle)
+        base = base.where(Subscription.billing_cycle == billing_cycle)
     if category is not None:
         cat_id = await resolve_optional_term_slug(
             db, "subscription-categories", category
         )
-        query = query.where(Subscription.category_term_id == cat_id)
+        base = base.where(Subscription.category_term_id == cat_id)
 
-    result = await db.execute(query.offset(skip).limit(limit))
-    return [await _build_public(db, s) for s in result.scalars().all()]
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
+    result = await db.execute(
+        base.order_by(Subscription.name).offset(skip).limit(limit)
+    )
+    return [await _build_public(db, s) for s in result.scalars().all()], total
 
 
 async def update_subscription(
@@ -311,18 +317,18 @@ async def list_payments(
     owner_id: uuid.UUID,
     skip: int = 0,
     limit: int = 50,
-) -> list[BillPaymentPublicRead]:
-    result = await db.execute(
-        select(BillPayment)
-        .where(
-            BillPayment.subscription_id == subscription_id,
-            BillPayment.owner_id == owner_id,
-        )
-        .order_by(BillPayment.billing_date.desc())
-        .offset(skip)
-        .limit(limit)
+) -> tuple[list[BillPaymentPublicRead], int]:
+    base = select(BillPayment).where(
+        BillPayment.subscription_id == subscription_id,
+        BillPayment.owner_id == owner_id,
     )
-    return [BillPaymentPublicRead.model_validate(p) for p in result.scalars().all()]
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
+    result = await db.execute(
+        base.order_by(BillPayment.billing_date.desc()).offset(skip).limit(limit)
+    )
+    return [BillPaymentPublicRead.model_validate(p) for p in result.scalars().all()], total
 
 
 async def get_payment(

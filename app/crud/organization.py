@@ -3,6 +3,7 @@ from datetime import datetime
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func
 from sqlmodel import and_, or_, select
 
 from app.crud.iso_reference import resolve_country_alpha2
@@ -199,18 +200,16 @@ async def list_orgs(
     skip: int = 0,
     limit: int = 50,
     household_id: uuid.UUID | None = None,
-) -> list[OrgPublic]:
-    r = await db.execute(
-        select(Organization)
-        .where(
-            _org_visibility_clause(owner_id, household_id),
-            Organization.deleted_at.is_(None),
-        )
-        .order_by(Organization.name)
-        .offset(skip)
-        .limit(limit)
+) -> tuple[list[OrgPublic], int]:
+    base = select(Organization).where(
+        _org_visibility_clause(owner_id, household_id),
+        Organization.deleted_at.is_(None),
     )
-    return [await _build_org_public(db, row) for row in r.scalars().all()]
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
+    r = await db.execute(base.order_by(Organization.name).offset(skip).limit(limit))
+    return [await _build_org_public(db, row) for row in r.scalars().all()], total
 
 
 async def update_org(

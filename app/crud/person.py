@@ -3,6 +3,7 @@ from datetime import datetime
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func
 from sqlmodel import and_, or_, select
 
 from app.crud.iso_reference import (
@@ -638,15 +639,18 @@ async def list_persons(
     skip: int = 0,
     limit: int = 50,
     household_id: uuid.UUID | None = None,
-) -> list[PersonSlim]:
+) -> tuple[list[PersonSlim], int]:
+    base = select(Person).where(
+        _visibility_clause(owner_id, household_id), Person.deleted_at.is_(None)
+    )
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
     result = await db.execute(
-        select(Person)
-        .where(_visibility_clause(owner_id, household_id), Person.deleted_at.is_(None))
-        .offset(skip)
-        .limit(limit)
+        base.order_by(Person.created_at.desc()).offset(skip).limit(limit)
     )
     persons = result.scalars().all()
-    return [await _build_person_slim(db, p) for p in persons]
+    return [await _build_person_slim(db, p) for p in persons], total
 
 
 async def update_person(

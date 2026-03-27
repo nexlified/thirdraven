@@ -1,7 +1,8 @@
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +10,12 @@ from app.core.database import get_session
 from app.core.security import decode_access_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+@dataclass
+class PaginationParams:
+    skip: int = Query(default=0, ge=0)
+    limit: int = Query(default=50, ge=1, le=500)
 
 
 async def get_current_user(

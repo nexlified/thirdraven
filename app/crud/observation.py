@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -98,20 +99,22 @@ async def list_observations(
     skip: int = 0,
     limit: int = 50,
     include_sensitive: bool = True,
-) -> list[ObservationPublic]:
-    q = select(PersonObservation).where(
+) -> tuple[list[ObservationPublic], int]:
+    base = select(PersonObservation).where(
         PersonObservation.person_id == person_id,
         PersonObservation.owner_id == owner_id,
     )
     if not include_sensitive:
-        q = q.where(PersonObservation.is_sensitive.is_(False))
-    q = (
-        q.order_by(PersonObservation.observed_on.desc().nulls_last())
+        base = base.where(PersonObservation.is_sensitive.is_(False))
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
+    r = await db.execute(
+        base.order_by(PersonObservation.observed_on.desc().nulls_last())
         .offset(skip)
         .limit(limit)
     )
-    r = await db.execute(q)
-    return [await _build(db, row) for row in r.scalars().all()]
+    return [await _build(db, row) for row in r.scalars().all()], total
 
 
 async def update_observation(

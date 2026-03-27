@@ -145,22 +145,26 @@ def test_create_note_with_all_fields(app_client):
 
 def test_list_notes_returns_list(app_client):
     notes = [make_note(), make_note(id=uuid.uuid4(), title="Other note")]
-    with patch("app.api.v1.notes.list_notes", new=AsyncMock(return_value=notes)):
+    with patch("app.api.v1.notes.list_notes", new=AsyncMock(return_value=(notes, 2))):
         resp = app_client.get("/api/v1/notes/")
     assert resp.status_code == 200
-    assert len(resp.json()) == 2
+    data = resp.json()
+    assert data["total"] == 2
+    assert len(data["items"]) == 2
 
 
 def test_list_notes_empty(app_client):
-    with patch("app.api.v1.notes.list_notes", new=AsyncMock(return_value=[])):
+    with patch("app.api.v1.notes.list_notes", new=AsyncMock(return_value=([], 0))):
         resp = app_client.get("/api/v1/notes/")
     assert resp.status_code == 200
-    assert resp.json() == []
+    data = resp.json()
+    assert data["items"] == []
+    assert data["total"] == 0
 
 
 def test_list_notes_pinned_filter(app_client):
     with patch(
-        "app.api.v1.notes.list_notes", new=AsyncMock(return_value=[])
+        "app.api.v1.notes.list_notes", new=AsyncMock(return_value=([], 0))
     ) as mock_list:
         resp = app_client.get("/api/v1/notes/?pinned=true")
     assert resp.status_code == 200
@@ -170,7 +174,7 @@ def test_list_notes_pinned_filter(app_client):
 
 def test_list_notes_person_filter(app_client):
     with patch(
-        "app.api.v1.notes.list_notes", new=AsyncMock(return_value=[])
+        "app.api.v1.notes.list_notes", new=AsyncMock(return_value=([], 0))
     ) as mock_list:
         resp = app_client.get(f"/api/v1/notes/?person_id={PERSON_ID}")
     assert resp.status_code == 200
@@ -180,7 +184,7 @@ def test_list_notes_person_filter(app_client):
 
 def test_list_notes_asset_filter(app_client):
     with patch(
-        "app.api.v1.notes.list_notes", new=AsyncMock(return_value=[])
+        "app.api.v1.notes.list_notes", new=AsyncMock(return_value=([], 0))
     ) as mock_list:
         resp = app_client.get(f"/api/v1/notes/?asset_id={ASSET_ID}")
     assert resp.status_code == 200

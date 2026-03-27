@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -80,15 +81,17 @@ async def list_documents(
     limit: int = 50,
     entity_type: str | None = None,
     entity_id: uuid.UUID | None = None,
-) -> list[DocumentPublic]:
-    q = select(Document).where(Document.owner_id == owner_id)
+) -> tuple[list[DocumentPublic], int]:
+    base = select(Document).where(Document.owner_id == owner_id)
     if entity_type is not None:
-        q = q.where(Document.entity_type == entity_type)
+        base = base.where(Document.entity_type == entity_type)
     if entity_id is not None:
-        q = q.where(Document.entity_id == entity_id)
-    q = q.order_by(Document.created_at.desc()).offset(skip).limit(limit)
-    r = await db.execute(q)
-    return [await _build(db, row) for row in r.scalars().all()]
+        base = base.where(Document.entity_id == entity_id)
+    total = (
+        await db.execute(select(func.count()).select_from(base.subquery()))
+    ).scalar_one()
+    r = await db.execute(base.order_by(Document.created_at.desc()).offset(skip).limit(limit))
+    return [await _build(db, row) for row in r.scalars().all()], total
 
 
 async def update_document(

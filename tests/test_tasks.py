@@ -176,22 +176,26 @@ def test_get_task_summary(app_client):
 
 def test_list_tasks_returns_list(app_client):
     tasks = [make_task(), make_task(id=uuid.uuid4(), title="Another task")]
-    with patch("app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=tasks)):
+    with patch("app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=(tasks, 2))):
         resp = app_client.get("/api/v1/tasks/")
     assert resp.status_code == 200
-    assert len(resp.json()) == 2
+    data = resp.json()
+    assert data["total"] == 2
+    assert len(data["items"]) == 2
 
 
 def test_list_tasks_empty(app_client):
-    with patch("app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=[])):
+    with patch("app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=([], 0))):
         resp = app_client.get("/api/v1/tasks/")
     assert resp.status_code == 200
-    assert resp.json() == []
+    data = resp.json()
+    assert data["items"] == []
+    assert data["total"] == 0
 
 
 def test_list_tasks_status_filter(app_client):
     with patch(
-        "app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=[])
+        "app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=([], 0))
     ) as mock_list:
         resp = app_client.get("/api/v1/tasks/?status=in_progress")
     assert resp.status_code == 200
@@ -201,7 +205,7 @@ def test_list_tasks_status_filter(app_client):
 
 def test_list_tasks_priority_filter(app_client):
     with patch(
-        "app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=[])
+        "app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=([], 0))
     ) as mock_list:
         resp = app_client.get("/api/v1/tasks/?priority=high")
     assert resp.status_code == 200
@@ -211,7 +215,7 @@ def test_list_tasks_priority_filter(app_client):
 
 def test_list_tasks_person_filter(app_client):
     with patch(
-        "app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=[])
+        "app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=([], 0))
     ) as mock_list:
         resp = app_client.get(f"/api/v1/tasks/?person_id={PERSON_ID}")
     assert resp.status_code == 200
