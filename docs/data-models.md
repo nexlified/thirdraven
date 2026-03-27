@@ -23,36 +23,22 @@ All tables use UUID primary keys. Timestamps are `datetime` (UTC). Optional fiel
 
 | Column | Type | Notes |
 |---|---|---|
-| `id` | UUID | PK |
+| `id` | UUID | PK, `uuid7()` |
 | `owner_id` | UUID | FK → `user.id`, indexed |
-| `first_name` | str | |
+| `first_name` | str | required |
 | `last_name` | str \| None | |
 | `nickname` | str \| None | |
-| `email` | str \| None | |
-| `phone` | str \| None | |
-| `notes` | str \| None | |
-| `closeness_level` | int \| None | 1–10 proximity score |
+| `notes` | str \| None | free-text notes |
+| `closeness_level` | int \| None | 1–5 proximity score |
+| `household_id` | UUID \| None | FK → `household.id`; set when `visibility = household` |
+| `visibility` | str | `"private"` (default) or `"household"` |
+| `is_placeholder` | bool | auto-created from unknown sender, default `false` |
+| `is_bot` | bool | automated sender flag, default `false` |
 | `created_at` | datetime | |
 | `updated_at` | datetime | |
-| `deleted_at` | datetime \| None | soft delete |
+| `deleted_at` | datetime \| None | soft delete — never hard-delete persons |
 
----
-
-### `contact`
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | UUID | PK |
-| `owner_id` | UUID | FK → `user.id`, indexed |
-| `first_name` | str | |
-| `last_name` | str \| None | |
-| `email` | str \| None | |
-| `phone` | str \| None | |
-| `notes` | str \| None | |
-| `tags` | list[str] | PostgreSQL ARRAY |
-| `created_at` | datetime | |
-| `updated_at` | datetime | |
-| `deleted_at` | datetime \| None | soft delete |
+> `email` and `phone` are **not columns** — they are derived at query time from the person's primary `person_channel` entries.
 
 ---
 
@@ -126,35 +112,20 @@ All extension tables have a **unique, indexed** `person_id` FK. They are created
 | `occupation_term_id` | UUID \| None | FK → `term.id` (vocab: `occupations`) |
 | `company` | str \| None | |
 | `job_title` | str \| None | |
-| `linkedin_url` | str \| None | |
-| `phone_secondary` | str \| None | |
 | `updated_at` | datetime | |
 
----
-
-### `person_social`
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | UUID | PK |
-| `person_id` | UUID | FK → `person.id`, unique |
-| `twitter_handle` | str \| None | |
-| `instagram_handle` | str \| None | |
-| `website_url` | str \| None | |
-| `updated_at` | datetime | |
+> LinkedIn URL and secondary phone are stored as `person_channel` rows, not here.
 
 ---
 
 ### `person_location`
 
+Stores only the timezone. Addresses are in `person_address`.
+
 | Column | Type | Notes |
 |---|---|---|
 | `id` | UUID | PK |
 | `person_id` | UUID | FK → `person.id`, unique |
-| `address_home` | str \| None | |
-| `address_work` | str \| None | |
-| `city` | str \| None | |
-| `country_id` | UUID \| None | FK → `country.id` |
 | `timezone_id` | UUID \| None | FK → `timezone.id` |
 | `updated_at` | datetime | |
 
@@ -168,7 +139,82 @@ All extension tables have a **unique, indexed** `person_id` FK. They are created
 | `person_id` | UUID | FK → `person.id`, unique |
 | `how_we_met` | str \| None | |
 | `first_met_on` | date \| None | |
+| `last_contacted_on` | date \| None | updated automatically on communication ingest |
+| `contact_frequency_days` | int \| None | intended contact cadence in days |
+| `preferred_contact_term_id` | UUID \| None | FK → `term.id` (vocab: `preferred-contact`) |
+| `relationship_nature` | str \| None | `"personal"` \| `"professional"` \| `"mixed"` |
 | `updated_at` | datetime | |
+
+---
+
+### `person_physical`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | PK |
+| `person_id` | UUID | FK → `person.id`, unique |
+| `height_cm` | float \| None | |
+| `eye_color_term_id` | UUID \| None | FK → `term.id` (vocab: `eye-colors`) |
+| `hair_color_term_id` | UUID \| None | FK → `term.id` (vocab: `hair-colors`) |
+| `blood_type` | str \| None | free text, e.g. `"A+"` |
+| `updated_at` | datetime | |
+
+---
+
+### `person_personality`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | PK |
+| `person_id` | UUID | FK → `person.id`, unique |
+| `interests` | str \| None | free text |
+| `food_preferences` | str \| None | free text |
+| `dietary_restrictions` | str \| None | free text |
+| `personality_notes` | str \| None | free text |
+| `communication_style_term_id` | UUID \| None | FK → `term.id` (vocab: `communication-styles`) |
+| `updated_at` | datetime | |
+
+---
+
+## Many-per-Person Tables
+
+Unlike the 1:1 extension tables above, these can have multiple rows per person.
+
+### `person_channel`
+
+Replaces the old `person_contact_method` and `person_social` tables. Any contact channel — email, phone, social handle, messaging app, website — is stored here with a free `type` string.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | PK |
+| `person_id` | UUID | FK → `person.id`, indexed |
+| `owner_id` | UUID | FK → `user.id` |
+| `type` | str | `"email"` \| `"mobile"` \| `"phone"` \| `"whatsapp"` \| `"telegram"` \| `"discord"` \| `"twitter"` \| `"instagram"` \| `"github"` \| `"linkedin"` \| `"facebook"` \| `"website"` \| any custom string |
+| `value` | str | The actual address, number, or handle |
+| `label` | str \| None | Optional label: `"work"` \| `"personal"` \| etc. |
+| `is_primary` | bool | Primary entry for its type — drives the `email`/`phone` shortcuts in the core response |
+| `created_at` | datetime | |
+
+---
+
+### `person_address`
+
+Replaces the old home/work address columns in `person_location`. Any number of addresses per person with a free `type` string.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | PK |
+| `person_id` | UUID | FK → `person.id`, indexed |
+| `owner_id` | UUID | FK → `user.id` |
+| `type` | str | `"home"` \| `"work"` \| `"other"` \| any custom string |
+| `street` | str \| None | |
+| `city` | str \| None | |
+| `postal_code` | str \| None | |
+| `country_id` | UUID \| None | FK → `country.id` |
+| `lat` | float \| None | Latitude |
+| `lng` | float \| None | Longitude |
+| `is_primary` | bool | Primary address for its type |
+| `created_at` | datetime | |
 
 ---
 
@@ -329,25 +375,41 @@ These tables are **read-only at runtime** — populated once by the seed script,
 ## Entity Relationship Summary
 
 ```
-user ──< person >── person_profile
-                 >── person_professional
-                 >── person_social
-                 >── person_location
-                 >── person_context
-                 >── person_tag >── term
-                 >── person_language >── language
-                 >── person_term >── term
-                 >── person_relationship (self)
-                 >── interaction
-
-user ──< contact >── contact_relationship (self)
+user ──< person >─── person_profile          (1:1 extension — identity)
+                 ├── person_professional     (1:1 extension — work)
+                 ├── person_location         (1:1 extension — timezone only)
+                 ├── person_context          (1:1 extension — relationship context)
+                 ├── person_physical         (1:1 extension — physical traits)
+                 ├── person_personality      (1:1 extension — personality & preferences)
+                 ├── person_channel          (M — contact channels & social handles)
+                 ├── person_address          (M — addresses by type)
+                 ├── person_tag ──> term     (M:M — labels)
+                 ├── person_language ──> language  (M:M — spoken languages)
+                 ├── person_relationship (self-referential M:M)
+                 ├── interaction
+                 ├── person_observation
+                 ├── person_follow_up
+                 └── person_goal
 
 user ──< asset >── asset_tag >── term
 
 vocabulary ──< term (self-referential via parent_id)
 
 country <── timezone
-country <── person_profile (nationality)
-country <── person_location
+country <── person_profile (nationality_country_id)
+country <── person_address (country_id)
 language <── person_language
 ```
+
+### 1:1 vs. many-per-person
+
+| Table | Cardinality | Created |
+|---|---|---|
+| `person_profile` | 1:1 | lazily — only when profile data is provided |
+| `person_professional` | 1:1 | lazily |
+| `person_location` | 1:1 | lazily — holds only `timezone_id` |
+| `person_context` | 1:1 | lazily; also auto-created on first communication |
+| `person_physical` | 1:1 | lazily |
+| `person_personality` | 1:1 | lazily |
+| `person_channel` | many | one row per email/phone/handle/social |
+| `person_address` | many | one row per address |
