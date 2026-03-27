@@ -9,13 +9,15 @@ from app.core.deps import PaginationParams, get_current_user
 from app.crud.context_package import get_context_package, get_relationship_health
 from app.crud.household import get_user_household_id
 from app.crud.person import (
-    add_relationship,
     create_person,
     get_person,
-    get_relationships_for_person,
     list_persons,
     soft_delete_person,
     update_person,
+)
+from app.crud.person_relationship import (
+    add_relationship,
+    list_relationships_for_person,
 )
 from app.crud.reference import add_person_term, list_person_terms, remove_person_term
 from app.models.user import User
@@ -79,11 +81,10 @@ async def get_one(
     )
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
-    relationships = await get_relationships_for_person(db, person_id)
-    return PersonWithRelationships(
-        **person.model_dump(),
-        relationships=[RelationshipPublic.model_validate(r) for r in relationships],
+    rels, _ = await list_relationships_for_person(
+        db, person_id, current_user.id, skip=0, limit=500
     )
+    return PersonWithRelationships(**person.model_dump(), relationships=rels)
 
 
 @router.patch("/{person_id}", response_model=PersonSlim)
@@ -133,6 +134,22 @@ async def create_relationship(
     return await add_relationship(
         db, person_id, data.to_person_id, data.label, current_user.id
     )
+
+
+@router.get("/{person_id}/relationships", response_model=Paginated[RelationshipPublic])
+async def list_person_relationships(
+    person_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
+):
+    person = await get_person(db, person_id, current_user.id)
+    if not person:
+        raise HTTPException(status_code=404, detail="Person not found")
+    items, total = await list_relationships_for_person(
+        db, person_id, current_user.id, skip=pagination.skip, limit=pagination.limit
+    )
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.post(

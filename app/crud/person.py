@@ -23,7 +23,6 @@ from app.models.person_extensions import (
     PersonProfile,
     PersonSocial,
 )
-from app.models.person_relationship import PersonRelationship
 from app.models.vocabulary import PersonLanguage, PersonTag, Term
 from app.schemas.iso_reference import CountrySlim, LanguageSlim, TimezonePublic
 from app.schemas.person import (
@@ -777,29 +776,3 @@ async def soft_delete_person(
     return person
 
 
-async def add_relationship(
-    db: AsyncSession,
-    from_id: uuid.UUID,
-    to_id: uuid.UUID,
-    label: str,
-    owner_id: uuid.UUID,
-) -> PersonRelationship:
-    label_term_id = await resolve_term_slug(db, "relationship-types", label)
-    rel = PersonRelationship(
-        from_person_id=from_id,
-        to_person_id=to_id,
-        label_term_id=label_term_id,
-    )
-    db.add(rel)
-    await db.commit()
-    await db.refresh(rel)
-    return rel
-
-
-async def get_relationships_for_person(
-    db: AsyncSession, person_id: uuid.UUID
-) -> list[PersonRelationship]:
-    result = await db.execute(
-        select(PersonRelationship).where(PersonRelationship.from_person_id == person_id)
-    )
-    return list(result.scalars().all())

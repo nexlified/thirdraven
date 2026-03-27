@@ -11,4 +11,7 @@ class PersonRelationship(SQLModel, table=True):
     from_person_id: uuid.UUID = Field(foreign_key="person.id", index=True)
     to_person_id: uuid.UUID = Field(foreign_key="person.id", index=True)
     label_term_id: uuid.UUID = Field(foreign_key="term.id")
+    inverse_id: uuid.UUID | None = Field(
+        default=None, foreign_key="person_relationship.id", nullable=True
+    )
     created_at: datetime = Field(default_factory=datetime.utcnow)

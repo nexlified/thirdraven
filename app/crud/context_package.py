@@ -8,14 +8,14 @@ from app.crud.followup import list_followups
 from app.crud.goal import list_goals
 from app.crud.observation import list_observations
 from app.crud.organization import list_person_orgs
-from app.crud.person import _build_person_slim, get_person, get_relationships_for_person
+from app.crud.person import _build_person_slim, get_person
+from app.crud.person_relationship import list_relationships_for_person
 from app.crud.person_life_event import list_life_events, list_significant_dates
 from app.models.interaction import Interaction
 from app.models.person import Person
 from app.models.person_extensions import PersonContext
 from app.schemas.context_package import ContextPackage, RelationshipHealthEntry
 from app.schemas.interaction import InteractionPublicRead
-from app.schemas.person import RelationshipPublic
 
 
 async def get_context_package(
@@ -27,8 +27,7 @@ async def get_context_package(
     if not person:
         return None
 
-    relationships_raw = await get_relationships_for_person(db, person_id)
-    relationships = [RelationshipPublic.model_validate(r) for r in relationships_raw]
+    relationships, _ = await list_relationships_for_person(db, person_id, owner_id)
 
     organizations = await list_person_orgs(db, person_id)
 

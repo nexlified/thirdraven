@@ -1779,26 +1779,27 @@ _VOCABULARIES = [
         "is_locked": False,
         "is_hierarchical": False,
         "terms": [
-            ("Friend", "friend"),
-            ("Acquaintance", "acquaintance"),
-            ("Family — Parent", "family-parent"),
-            ("Family — Sibling", "family-sibling"),
-            ("Family — Child", "family-child"),
-            ("Family — Extended", "family-extended"),
-            ("Romantic Partner", "romantic-partner"),
-            ("Colleague", "colleague"),
-            ("Manager", "manager"),
-            ("Direct Report", "direct-report"),
-            ("Mentor", "mentor"),
-            ("Mentee", "mentee"),
-            ("Client", "client"),
-            ("Vendor", "vendor"),
-            ("Contractor", "contractor"),
-            ("Neighbor", "neighbor"),
-            ("Classmate", "classmate"),
-            ("Teammate", "teammate"),
-            ("Business Partner", "business-partner"),
-            ("Online Friend", "online-friend"),
+            # (name, slug, reverse_slug)
+            ("Friend",            "friend",           "friend"),
+            ("Acquaintance",      "acquaintance",     "acquaintance"),
+            ("Family — Parent",   "family-parent",    "family-child"),
+            ("Family — Sibling",  "family-sibling",   "family-sibling"),
+            ("Family — Child",    "family-child",     "family-parent"),
+            ("Family — Extended", "family-extended",  "family-extended"),
+            ("Romantic Partner",  "romantic-partner", "romantic-partner"),
+            ("Colleague",         "colleague",        "colleague"),
+            ("Manager",           "manager",          "direct-report"),
+            ("Direct Report",     "direct-report",    "manager"),
+            ("Mentor",            "mentor",           "mentee"),
+            ("Mentee",            "mentee",           "mentor"),
+            ("Client",            "client",           "vendor"),
+            ("Vendor",            "vendor",           "client"),
+            ("Contractor",        "contractor",       "contractor"),
+            ("Neighbor",          "neighbor",         "neighbor"),
+            ("Classmate",         "classmate",        "classmate"),
+            ("Teammate",          "teammate",         "teammate"),
+            ("Business Partner",  "business-partner", "business-partner"),
+            ("Online Friend",     "online-friend",    "online-friend"),
         ],
     },
     {
@@ -2053,24 +2054,27 @@ async def _seed_vocabularies(db: AsyncSession) -> int:
 
         for term_data in vdata["terms"]:
             if len(term_data) == 3:
-                name, slug, parent_slug = term_data
+                if vdata["is_hierarchical"]:
+                    name, slug, parent_slug = term_data
+                    reverse_slug = None
+                else:
+                    name, slug, reverse_slug = term_data
+                    parent_slug = None
             else:
                 name, slug = term_data
                 parent_slug = None
+                reverse_slug = None
 
             existing_term = await db.exec(
                 select(Term).where(Term.vocabulary_id == vocab.id, Term.slug == slug)
             )
-            if existing_term.first():
-                # Populate slug_to_id for children that need parent refs
-                t = await db.exec(
-                    select(Term).where(
-                        Term.vocabulary_id == vocab.id, Term.slug == slug
-                    )
-                )
-                existing_t = t.first()
-                if existing_t:
-                    slug_to_id[slug] = existing_t.id
+            existing_t = existing_term.first()
+            if existing_t:
+                # Update reverse_slug if not yet set
+                if reverse_slug and not existing_t.reverse_slug:
+                    existing_t.reverse_slug = reverse_slug
+                    db.add(existing_t)
+                slug_to_id[slug] = existing_t.id
                 continue
 
             parent_id = slug_to_id.get(parent_slug) if parent_slug else None
@@ -2079,6 +2083,7 @@ async def _seed_vocabularies(db: AsyncSession) -> int:
                 name=name,
                 slug=slug,
                 parent_id=parent_id,
+                reverse_slug=reverse_slug,
             )
             db.add(term)
             await db.flush()

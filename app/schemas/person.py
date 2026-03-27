@@ -7,19 +7,31 @@ from app.schemas.iso_reference import CountrySlim, LanguageSlim, TimezonePublic
 from app.schemas.vocabulary import TermSlim
 
 
+class RelatedPersonRef(BaseModel):
+    id: uuid.UUID
+    first_name: str
+    last_name: str | None
+    nickname: str | None
+
+    model_config = {"from_attributes": True}
+
+
 class RelationshipCreate(BaseModel):
     to_person_id: uuid.UUID
     label: str  # slug from "relationship-types" vocabulary
 
 
+class RelationshipUpdate(BaseModel):
+    label: str  # new slug from "relationship-types" vocabulary
+
+
 class RelationshipPublic(BaseModel):
     id: uuid.UUID
-    from_person_id: uuid.UUID
-    to_person_id: uuid.UUID
-    label_term_id: uuid.UUID
+    person: RelatedPersonRef
+    related_person: RelatedPersonRef
+    label: TermSlim
+    inverse_id: uuid.UUID | None
     created_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 # ── Request schemas (flat — CRUD routes fields to the correct tables) ──────────

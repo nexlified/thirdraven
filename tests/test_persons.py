@@ -10,13 +10,15 @@ from app.api.v1.persons import router as persons_router
 from app.core.database import get_session
 from app.core.deps import get_current_user
 from app.models.person import Person
-from app.models.person_relationship import PersonRelationship
 from app.models.user import User
 from app.schemas.person import (
     PersonExtended,
     PersonProfessionalSection,
     PersonSlim,
+    RelatedPersonRef,
+    RelationshipPublic,
 )
+from app.schemas.vocabulary import TermSlim
 
 OWNER_ID = uuid.uuid4()
 PERSON_ID = uuid.uuid4()
@@ -185,8 +187,8 @@ def test_get_person_found(app_client):
     with (
         patch("app.api.v1.persons.get_person", new=AsyncMock(return_value=person)),
         patch(
-            "app.api.v1.persons.get_relationships_for_person",
-            new=AsyncMock(return_value=[]),
+            "app.api.v1.persons.list_relationships_for_person",
+            new=AsyncMock(return_value=([], 0)),
         ),
     ):
         resp = app_client.get(f"/api/v1/persons/{PERSON_ID}")
@@ -201,25 +203,31 @@ def test_get_person_found(app_client):
 
 def test_get_person_with_relationships(app_client):
     person = make_person_extended()
-    rel = PersonRelationship(
-        id=uuid.uuid4(),
-        from_person_id=PERSON_ID,
-        to_person_id=OTHER_ID,
-        label_term_id=TERM_ID,
+    REL_ID = uuid.uuid4()
+    rel = RelationshipPublic(
+        id=REL_ID,
+        person=RelatedPersonRef(
+            id=PERSON_ID, first_name="Alice", last_name="Smith", nickname=None
+        ),
+        related_person=RelatedPersonRef(
+            id=OTHER_ID, first_name="Bob", last_name=None, nickname=None
+        ),
+        label=TermSlim(id=TERM_ID, name="Colleague", slug="colleague"),
+        inverse_id=None,
         created_at=datetime.utcnow(),
     )
     with (
         patch("app.api.v1.persons.get_person", new=AsyncMock(return_value=person)),
         patch(
-            "app.api.v1.persons.get_relationships_for_person",
-            new=AsyncMock(return_value=[rel]),
+            "app.api.v1.persons.list_relationships_for_person",
+            new=AsyncMock(return_value=([rel], 1)),
         ),
     ):
         resp = app_client.get(f"/api/v1/persons/{PERSON_ID}")
     assert resp.status_code == 200
     body = resp.json()
     assert len(body["relationships"]) == 1
-    assert body["relationships"][0]["label_term_id"] == str(TERM_ID)
+    assert body["relationships"][0]["label"]["slug"] == "colleague"
 
 
 def test_get_person_not_found(app_client):
@@ -238,8 +246,8 @@ def test_get_person_with_include_professional(app_client):
     with (
         patch("app.api.v1.persons.get_person", new=AsyncMock(return_value=person)),
         patch(
-            "app.api.v1.persons.get_relationships_for_person",
-            new=AsyncMock(return_value=[]),
+            "app.api.v1.persons.list_relationships_for_person",
+            new=AsyncMock(return_value=([], 0)),
         ),
     ):
         resp = app_client.get(f"/api/v1/persons/{PERSON_ID}?include=professional")
@@ -304,11 +312,16 @@ def test_delete_person_not_found(app_client):
 def test_create_relationship_success(app_client):
     person = make_person_extended()
     target = make_person_extended(id=OTHER_ID, first_name="Bob")
-    rel = PersonRelationship(
+    rel = RelationshipPublic(
         id=uuid.uuid4(),
-        from_person_id=PERSON_ID,
-        to_person_id=OTHER_ID,
-        label_term_id=TERM_ID,
+        person=RelatedPersonRef(
+            id=PERSON_ID, first_name="Alice", last_name="Smith", nickname=None
+        ),
+        related_person=RelatedPersonRef(
+            id=OTHER_ID, first_name="Bob", last_name=None, nickname=None
+        ),
+        label=TermSlim(id=TERM_ID, name="Colleague", slug="colleague"),
+        inverse_id=None,
         created_at=datetime.utcnow(),
     )
     with (
@@ -323,7 +336,7 @@ def test_create_relationship_success(app_client):
             json={"to_person_id": str(OTHER_ID), "label": "colleague"},
         )
     assert resp.status_code == 201
-    assert resp.json()["label_term_id"] == str(TERM_ID)
+    assert resp.json()["label"]["slug"] == "colleague"
 
 
 def test_create_relationship_source_not_found(app_client):

@@ -16,6 +16,7 @@ from app.api.v1.notes import router as notes_router
 from app.api.v1.observations import router as observations_router
 from app.api.v1.organizations import orgs_router, person_orgs_router
 from app.api.v1.persons import router as persons_router
+from app.api.v1.relationships import router as relationships_router
 from app.api.v1.records import router as records_router
 from app.api.v1.renewals import router as renewals_router
 from app.api.v1.raven_logs import router as raven_logs_router
@@ -28,6 +29,7 @@ api_router = APIRouter()
 api_router.include_router(auth_router)
 api_router.include_router(households_router)
 api_router.include_router(persons_router)
+api_router.include_router(relationships_router)
 api_router.include_router(assets_router)
 api_router.include_router(interactions_router)
 api_router.include_router(life_events_router)

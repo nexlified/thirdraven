@@ -37,6 +37,7 @@ class Term(SQLModel, table=True):
     metadata_: dict[str, Any] | None = Field(
         default=None, sa_column=Column("metadata", JSON, nullable=True)
     )
+    reverse_slug: str | None = None
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
