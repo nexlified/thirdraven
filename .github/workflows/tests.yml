@@ -19,23 +19,14 @@ jobs:
         with:
           python-version: "3.14"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
       - name: Install dependencies
-        run: |
-          pip install \
-            fastapi[standard] \
-            sqlmodel \
-            pydantic[email] \
-            pydantic-settings \
-            asyncpg \
-            python-jose[cryptography] \
-            bcrypt \
-            python-multipart \
-            pytest \
-            pytest-asyncio \
-            httpx
+        run: uv sync --group dev
 
       - name: Run tests
-        run: pytest --tb=short -q
+        run: uv run pytest --tb=short -q
         env:
           DATABASE_URL: postgresql+asyncpg://thirdraven:secret@localhost:5432/thirdraven_db
           SECRET_KEY: test-secret-key
