@@ -1,73 +1,98 @@
-# React + TypeScript + Vite
+# ThirdRaven — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Vite + React + TypeScript SPA for ThirdRaven. Provides the web interface for managing people, interactions, observations, and other personal data stored in the ThirdRaven backend.
 
-Currently, two official plugins are available:
+> Part of the [ThirdRaven monorepo](../README.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Layer | Technology |
+|---|---|
+| Framework | React 19 |
+| Language | TypeScript 5 |
+| Build tool | Vite |
+| Routing | React Router 7 |
+| Package manager | npm (or bun) |
+| Linting | ESLint |
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Setup
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerequisites
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Node.js 18+
+- npm (or bun)
+- ThirdRaven backend running on `http://localhost:8000`
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. Install dependencies
+
+```bash
+cd frontend
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Start the dev server
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+App available at `http://localhost:5173`.
+
+---
+
+## Development Commands
+
+| Task | Command |
+|---|---|
+| Start dev server | `npm run dev` |
+| Build for production | `npm run build` |
+| Preview production build | `npm run preview` |
+| Lint | `npm run lint` |
+
+---
+
+## Project Structure
+
+```
+frontend/
+├── src/
+│   ├── api/                # HTTP client modules (auth, persons, vocabularies, etc.)
+│   ├── components/         # Reusable React components
+│   │   ├── AppLayout.tsx
+│   │   ├── FormControls.tsx
+│   │   ├── ProtectedRoute.tsx
+│   │   └── QuickCreateModal.tsx
+│   ├── context/            # React context (AuthContext)
+│   ├── hooks/              # Custom hooks (useSettings)
+│   ├── pages/              # Page components
+│   │   ├── Dashboard.tsx
+│   │   ├── Login.tsx
+│   │   ├── Register.tsx
+│   │   ├── People.tsx
+│   │   ├── PersonDetail.tsx
+│   │   ├── Settings.tsx
+│   │   └── Vocabularies.tsx
+│   ├── assets/             # Static assets
+│   ├── App.tsx             # Root component with routing
+│   ├── main.tsx            # Entry point
+│   └── index.css           # Global styles
+├── public/
+├── index.html
+├── vite.config.ts
+├── tsconfig.app.json
+├── tsconfig.node.json
+└── package.json
+```
+
+---
+
+## Backend Connection
+
+The frontend communicates with the ThirdRaven backend API at `http://localhost:8000/api/v1`. The HTTP client is configured in `src/api/client.ts`. JWT tokens obtained at login are stored in `localStorage` and attached to every authenticated request.
+
+To point the frontend at a different backend URL, update the base URL in `src/api/client.ts`.
+
