@@ -6,6 +6,7 @@ import { Register } from "./pages/Register";
 import { Dashboard } from "./pages/Dashboard";
 import { People } from "./pages/People";
 import { PersonDetail } from "./pages/PersonDetail";
+import { Tasks } from "./pages/Tasks";
 import { Vocabularies } from "./pages/Vocabularies";
 import { Settings } from "./pages/Settings";
 
@@ -45,6 +46,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Vocabularies />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tasks"
+            element={
+              <ProtectedRoute>
+                <Tasks />
               </ProtectedRoute>
             }
           />
