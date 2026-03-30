@@ -141,7 +141,10 @@ async def delete(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    person = await soft_delete_person(db, person_id, current_user.id)
+    try:
+        person = await soft_delete_person(db, person_id, current_user.id)
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Cannot delete your own person record")
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
 

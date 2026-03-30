@@ -29,3 +29,4 @@ class Person(SQLModel, table=True):
     # Identity flags
     is_placeholder: bool = Field(default=False)  # auto-created from unrecognised sender
     is_bot: bool = Field(default=False)  # automated/bot identity
+    is_self: bool = Field(default=False)  # the user's own person record — non-deletable

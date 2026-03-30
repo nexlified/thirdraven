@@ -357,6 +357,7 @@ async def _build_person_slim(db: AsyncSession, person: Person) -> PersonSlim:
         tags=tags,
         is_placeholder=person.is_placeholder,
         is_bot=person.is_bot,
+        is_self=person.is_self
     )
 
 
@@ -776,6 +777,8 @@ async def soft_delete_person(
     person = result.scalars().first()
     if not person:
         return None
+    if person.is_self:
+        raise ValueError("cannot_delete_self")
     person.deleted_at = datetime.utcnow()
     db.add(person)
     await db.commit()

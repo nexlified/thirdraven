@@ -8,6 +8,8 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
+    first_name: str
+    last_name: str | None = None
 
 
 class UserPublic(BaseModel):
@@ -15,6 +17,7 @@ class UserPublic(BaseModel):
     username: str
     email: str
     created_at: datetime
+    person_id: uuid.UUID | None = None
 
     model_config = {"from_attributes": True}
 
