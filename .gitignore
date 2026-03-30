@@ -22,5 +22,10 @@ docs/node_modules/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 
+# Playwright
+frontend/e2e/screenshots/
+frontend/playwright-report/
+frontend/test-results/
+
 # IDE
 .idea/

@@ -2,6 +2,8 @@ name: Frontend
 
 on:
   pull_request:
+    paths:
+      - 'frontend/**'
   push:
     branches:
       - main
@@ -31,3 +33,17 @@ jobs:
 
       - name: Build
         run: cd frontend && npm run build
+
+      - name: Install Playwright browsers
+        run: cd frontend && npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        run: cd frontend && npm run test
+
+      - name: Upload homepage screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: homepage-screenshot
+          path: frontend/e2e/screenshots/
+          if-no-files-found: ignore
