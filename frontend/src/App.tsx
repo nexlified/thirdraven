@@ -4,9 +4,11 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { Dashboard } from "./pages/Dashboard";
+import { Events } from "./pages/Events";
 import { People } from "./pages/People";
 import { PersonDetail } from "./pages/PersonDetail";
 import { Tasks } from "./pages/Tasks";
+import { Organizations } from "./pages/Organizations";
 import { Vocabularies } from "./pages/Vocabularies";
 import { Settings } from "./pages/Settings";
 
@@ -50,10 +52,26 @@ export default function App() {
             }
           />
           <Route
+            path="/events"
+            element={
+              <ProtectedRoute>
+                <Events />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/tasks"
             element={
               <ProtectedRoute>
                 <Tasks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organizations"
+            element={
+              <ProtectedRoute>
+                <Organizations />
               </ProtectedRoute>
             }
           />
