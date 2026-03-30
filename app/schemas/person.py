@@ -121,17 +121,6 @@ class PersonCreate(BaseModel):
     contact_frequency_days: int | None = None
     preferred_contact: str | None = None  # slug from "contact-channels"
     relationship_nature: str | None = None  # "personal" | "professional" | "mixed"
-    # physical section
-    height_cm: float | None = None
-    eye_color: str | None = None  # slug from "eye-colors"
-    hair_color: str | None = None  # slug from "hair-colors"
-    blood_type: str | None = None
-    # personality section
-    interests: str | None = None
-    food_preferences: str | None = None
-    dietary_restrictions: str | None = None
-    personality_notes: str | None = None
-    communication_style: str | None = None  # slug from "communication-styles"
     # household sharing
     visibility: str = "private"  # "private" | "household"
     # identity flags
@@ -168,17 +157,6 @@ class PersonUpdate(BaseModel):
     contact_frequency_days: int | None = None
     preferred_contact: str | None = None
     relationship_nature: str | None = None  # "personal" | "professional" | "mixed"
-    # physical section
-    height_cm: float | None = None
-    eye_color: str | None = None
-    hair_color: str | None = None
-    blood_type: str | None = None
-    # personality section
-    interests: str | None = None
-    food_preferences: str | None = None
-    dietary_restrictions: str | None = None
-    personality_notes: str | None = None
-    communication_style: str | None = None
     # household sharing
     visibility: str | None = None  # "private" | "household"
     # identity flags
@@ -252,25 +230,6 @@ class PersonContextSection(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class PersonPhysicalSection(BaseModel):
-    height_cm: float | None = None
-    eye_color: TermSlim | None = None
-    hair_color: TermSlim | None = None
-    blood_type: str | None = None
-
-    model_config = {"from_attributes": True}
-
-
-class PersonPersonalitySection(BaseModel):
-    interests: str | None = None
-    food_preferences: str | None = None
-    dietary_restrictions: str | None = None
-    personality_notes: str | None = None
-    communication_style: TermSlim | None = None
-
-    model_config = {"from_attributes": True}
-
-
 class PersonExtended(PersonSlim):
     """Slim core + opt-in extension sections."""
 
@@ -278,8 +237,6 @@ class PersonExtended(PersonSlim):
     professional: PersonProfessionalSection | None = None
     location: PersonLocationSection | None = None
     context: PersonContextSection | None = None
-    physical: PersonPhysicalSection | None = None
-    personality: PersonPersonalitySection | None = None
     channels: list[ChannelPublic] | None = None
 
 
@@ -298,9 +255,6 @@ class PersonFieldOptions(BaseModel):
     prefixes: list[TermSlim]
     genders: list[TermSlim]
     occupations: list[TermSlim]
-    eye_colors: list[TermSlim]
-    hair_colors: list[TermSlim]
-    communication_styles: list[TermSlim]
     tags: list[TermSlim]
     relationship_types: list[TermSlim]
     preferred_contact: list[TermSlim]

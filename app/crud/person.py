@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime
 
 from fastapi import HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import and_, or_, select
 
 from app.crud.iso_reference import (
@@ -19,8 +19,6 @@ from app.models.person_extensions import (
     PersonChannel,
     PersonContext,
     PersonLocation,
-    PersonPersonality,
-    PersonPhysical,
     PersonProfessional,
     PersonProfile,
 )
@@ -36,8 +34,6 @@ from app.schemas.person import (
     PersonCreate,
     PersonExtended,
     PersonLocationSection,
-    PersonPersonalitySection,
-    PersonPhysicalSection,
     PersonProfessionalSection,
     PersonProfileSection,
     PersonSlim,
@@ -87,44 +83,29 @@ _CONTEXT_FIELDS = {
     "preferred_contact",
     "relationship_nature",
 }
-_PHYSICAL_FIELDS = {"height_cm", "eye_color", "hair_color", "blood_type"}
-_PERSONALITY_FIELDS = {
-    "interests",
-    "food_preferences",
-    "dietary_restrictions",
-    "personality_notes",
-    "communication_style",
-}
-
 _ALL_EXT_FIELDS = (
     _PROFILE_FIELDS
     | _PROFESSIONAL_FIELDS
     | _LOCATION_FIELDS
     | _CONTEXT_FIELDS
-    | _PHYSICAL_FIELDS
-    | _PERSONALITY_FIELDS
 )
 
 
 def _split_fields(
     data: dict,
-) -> tuple[dict, dict, dict, dict, dict, dict, dict]:
-    """Partition a flat dict into (core, profile, professional, location, context, physical, personality)."""  # noqa: E501
+) -> tuple[dict, dict, dict, dict, dict]:
+    """Partition a flat dict into (core, profile, professional, location, context)."""
     core: dict = {}
     profile: dict = {}
     professional: dict = {}
     location: dict = {}
     context: dict = {}
-    physical: dict = {}
-    personality: dict = {}
 
     buckets = {
         **{k: profile for k in _PROFILE_FIELDS},
         **{k: professional for k in _PROFESSIONAL_FIELDS},
         **{k: location for k in _LOCATION_FIELDS},
         **{k: context for k in _CONTEXT_FIELDS},
-        **{k: physical for k in _PHYSICAL_FIELDS},
-        **{k: personality for k in _PERSONALITY_FIELDS},
     }
 
     for k, v in data.items():
@@ -133,7 +114,7 @@ def _split_fields(
         else:
             core[k] = v
 
-    return core, profile, professional, location, context, physical, personality
+    return core, profile, professional, location, context
 
 
 # ── Slug-to-FK resolution helpers ─────────────────────────────────────────────
@@ -189,34 +170,6 @@ async def _resolve_context_fields(db: AsyncSession, raw: dict) -> dict:
             )
         else:
             result[k] = v  # relationship_nature and other raw strings pass through
-    return result
-
-
-async def _resolve_physical_fields(db: AsyncSession, raw: dict) -> dict:
-    result = {}
-    for k, v in raw.items():
-        if k == "eye_color":
-            result["eye_color_term_id"] = await resolve_optional_term_slug(
-                db, "eye-colors", v
-            )
-        elif k == "hair_color":
-            result["hair_color_term_id"] = await resolve_optional_term_slug(
-                db, "hair-colors", v
-            )
-        else:
-            result[k] = v
-    return result
-
-
-async def _resolve_personality_fields(db: AsyncSession, raw: dict) -> dict:
-    result = {}
-    for k, v in raw.items():
-        if k == "communication_style":
-            result["communication_style_term_id"] = await resolve_optional_term_slug(
-                db, "communication-styles", v
-            )
-        else:
-            result[k] = v
     return result
 
 
@@ -505,52 +458,6 @@ async def _build_context_section(
     )
 
 
-async def _build_physical_section(
-    db: AsyncSession, row: PersonPhysical
-) -> PersonPhysicalSection:
-    eye_color = None
-    if row.eye_color_term_id:
-        r = await db.execute(select(Term).where(Term.id == row.eye_color_term_id))
-        t = r.scalars().first()
-        if t:
-            eye_color = TermSlim.model_validate(t)
-
-    hair_color = None
-    if row.hair_color_term_id:
-        r = await db.execute(select(Term).where(Term.id == row.hair_color_term_id))
-        t = r.scalars().first()
-        if t:
-            hair_color = TermSlim.model_validate(t)
-
-    return PersonPhysicalSection(
-        height_cm=row.height_cm,
-        eye_color=eye_color,
-        hair_color=hair_color,
-        blood_type=row.blood_type,
-    )
-
-
-async def _build_personality_section(
-    db: AsyncSession, row: PersonPersonality
-) -> PersonPersonalitySection:
-    communication_style = None
-    if row.communication_style_term_id:
-        r = await db.execute(
-            select(Term).where(Term.id == row.communication_style_term_id)
-        )
-        t = r.scalars().first()
-        if t:
-            communication_style = TermSlim.model_validate(t)
-
-    return PersonPersonalitySection(
-        interests=row.interests,
-        food_preferences=row.food_preferences,
-        dietary_restrictions=row.dietary_restrictions,
-        personality_notes=row.personality_notes,
-        communication_style=communication_style,
-    )
-
-
 # ── CRUD operations ────────────────────────────────────────────────────────────
 
 
@@ -582,23 +489,13 @@ async def create_person(
     channels_data = raw.pop("channels", [])
     addresses_data = raw.pop("addresses", [])
 
-    (
-        core,
-        profile_raw,
-        professional_raw,
-        location_raw,
-        context_raw,
-        physical_raw,
-        personality_raw,
-    ) = _split_fields(raw)
+    core, profile_raw, professional_raw, location_raw, context_raw = _split_fields(raw)
 
     # Resolve slug/code fields to FK UUIDs
     profile_db = await _resolve_profile_fields(db, profile_raw)
     professional_db = await _resolve_professional_fields(db, professional_raw)
     location_db = await _resolve_location_fields(db, location_raw)
     context_db = await _resolve_context_fields(db, context_raw)
-    physical_db = await _resolve_physical_fields(db, physical_raw)
-    personality_db = await _resolve_personality_fields(db, personality_raw)
 
     person = Person(owner_id=owner_id, **core)
     db.add(person)
@@ -613,10 +510,6 @@ async def create_person(
         db.add(PersonLocation(person_id=person.id, **location_db))
     if context_db:
         db.add(PersonContext(person_id=person.id, **context_db))
-    if physical_db:
-        db.add(PersonPhysical(person_id=person.id, **physical_db))
-    if personality_db:
-        db.add(PersonPersonality(person_id=person.id, **personality_db))
 
     # Junction rows
     for slug in tags_slugs:
@@ -728,24 +621,6 @@ async def get_person(
             if row:
                 sections["context"] = await _build_context_section(db, row)
 
-        if all_requested or "physical" in include:
-            r = await db.execute(
-                select(PersonPhysical).where(PersonPhysical.person_id == person_id)
-            )
-            row = r.scalars().first()
-            if row:
-                sections["physical"] = await _build_physical_section(db, row)
-
-        if all_requested or "personality" in include:
-            r = await db.execute(
-                select(PersonPersonality).where(
-                    PersonPersonality.person_id == person_id
-                )
-            )
-            row = r.scalars().first()
-            if row:
-                sections["personality"] = await _build_personality_section(db, row)
-
         if all_requested or "channels" in include or "contact_methods" in include:
             r = await db.execute(
                 select(PersonChannel)
@@ -818,15 +693,7 @@ async def update_person(
     channels_data = raw.pop("channels", None)
     addresses_data = raw.pop("addresses", None)
 
-    (
-        core,
-        profile_raw,
-        professional_raw,
-        location_raw,
-        context_raw,
-        physical_raw,
-        personality_raw,
-    ) = _split_fields(raw)
+    core, profile_raw, professional_raw, location_raw, context_raw = _split_fields(raw)
 
     # Handle visibility change in core fields
     if "visibility" in core:
@@ -855,8 +722,6 @@ async def update_person(
         (professional_raw, _resolve_professional_fields, PersonProfessional),
         (location_raw, _resolve_location_fields, PersonLocation),
         (context_raw, _resolve_context_fields, PersonContext),
-        (physical_raw, _resolve_physical_fields, PersonPhysical),
-        (personality_raw, _resolve_personality_fields, PersonPersonality),
     ]:
         if ext_raw:
             ext_db = await resolver(db, ext_raw)

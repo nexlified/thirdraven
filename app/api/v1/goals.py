@@ -15,8 +15,8 @@ from app.crud.goal import (
 )
 from app.crud.person import get_person
 from app.models.user import User
-from app.schemas.paginated import Paginated
 from app.schemas.goal import GoalCreate, GoalPublic, GoalUpdate
+from app.schemas.paginated import Paginated
 
 router = APIRouter(
     prefix="/persons/{person_id}/goals", tags=["goals"]

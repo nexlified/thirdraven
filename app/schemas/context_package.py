@@ -5,10 +5,10 @@ from pydantic import BaseModel
 from app.schemas.followup import FollowUpPublic
 from app.schemas.goal import GoalPublic
 from app.schemas.interaction import InteractionPublicRead
+from app.schemas.life_event import LifeEventPublic, SignificantDatePublic
 from app.schemas.observation import ObservationPublic
 from app.schemas.organization import PersonOrgPublic
 from app.schemas.person import PersonExtended, PersonSlim, RelationshipPublic
-from app.schemas.person_life_event import LifeEventPublic, SignificantDatePublic
 
 
 class RelationshipHealthEntry(BaseModel):

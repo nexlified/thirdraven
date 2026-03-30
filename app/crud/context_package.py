@@ -6,11 +6,11 @@ from sqlmodel import select
 
 from app.crud.followup import list_followups
 from app.crud.goal import list_goals
+from app.crud.life_event import list_life_events_for_person, list_significant_dates
 from app.crud.observation import list_observations
 from app.crud.organization import list_person_orgs
 from app.crud.person import _build_person_slim, get_person
 from app.crud.person_relationship import list_relationships_for_person
-from app.crud.person_life_event import list_life_events, list_significant_dates
 from app.models.interaction import Interaction
 from app.models.person import Person
 from app.models.person_extensions import PersonContext
@@ -56,7 +56,10 @@ async def get_context_package(
         and _next_occurrence(d.month, d.day, today) <= cutoff
     ]
 
-    life_events = await list_life_events(db, person_id, owner_id, limit=10)
+    life_events_list, _ = await list_life_events_for_person(
+        db, person_id, owner_id, limit=10
+    )
+    life_events = life_events_list
 
     observations = await list_observations(
         db, person_id, owner_id, include_sensitive=True, limit=20

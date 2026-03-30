@@ -8,7 +8,6 @@ from app.core.database import get_session
 from app.core.deps import PaginationParams, get_current_user
 from app.crud.context_package import get_context_package, get_relationship_health
 from app.crud.household import get_user_household_id
-from app.crud.iso_reference import list_countries, list_languages, list_timezones
 from app.crud.person import (
     create_person,
     get_person,
@@ -24,7 +23,7 @@ from app.crud.reference import add_person_term, list_person_terms, remove_person
 from app.crud.vocabulary import list_terms as list_vocab_terms
 from app.models.user import User
 from app.schemas.context_package import ContextPackage, RelationshipHealthEntry
-from app.schemas.iso_reference import CountrySlim, LanguageSlim, TimezonePublic
+from app.schemas.paginated import Paginated
 from app.schemas.person import (
     PersonCreate,
     PersonFieldOptions,
@@ -34,7 +33,6 @@ from app.schemas.person import (
     RelationshipCreate,
     RelationshipPublic,
 )
-from app.schemas.paginated import Paginated
 from app.schemas.reference import PersonTermCreate, PersonTermPublic
 from app.schemas.vocabulary import TermSlim
 
@@ -91,9 +89,6 @@ async def get_schema(
         prefixes=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "name-prefixes")],
         genders=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "genders")],
         occupations=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "occupations")],
-        eye_colors=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "eye-colors")],
-        hair_colors=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "hair-colors")],
-        communication_styles=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "communication-styles")],
         tags=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "person-tags")],
         relationship_types=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "relationship-types")],
         preferred_contact=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "preferred-contact")],

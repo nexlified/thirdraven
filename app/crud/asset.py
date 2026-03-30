@@ -41,10 +41,32 @@ async def _get_term(db: AsyncSession, term_id: uuid.UUID) -> TermSlim | None:
     return TermSlim.model_validate(t) if t else None
 
 
-async def _build_asset_public(db: AsyncSession, asset: Asset) -> AssetPublicRead:
+async def _build_asset_public(
+    db: AsyncSession, asset: Asset, include: list[str] | None = None
+) -> AssetPublicRead:
+    from app.crud.asset_extensions import (
+        get_digital_asset,
+        get_document_asset,
+        get_financial_asset,
+        get_physical_asset,
+    )
+
     category = await _get_term(db, asset.category_term_id)
     status = await _get_term(db, asset.status_term_id)
     tags = await _get_asset_tags(db, asset.id)
+
+    sections: dict = {}
+    if include:
+        all_requested = "all" in include
+        if all_requested or "physical" in include:
+            sections["physical"] = await get_physical_asset(db, asset.id)
+        if all_requested or "document" in include:
+            sections["document"] = await get_document_asset(db, asset.id)
+        if all_requested or "financial" in include:
+            sections["financial"] = await get_financial_asset(db, asset.id)
+        if all_requested or "digital" in include:
+            sections["digital"] = await get_digital_asset(db, asset.id)
+
     return AssetPublicRead(
         id=asset.id,
         owner_id=asset.owner_id,
@@ -52,15 +74,19 @@ async def _build_asset_public(db: AsyncSession, asset: Asset) -> AssetPublicRead
         category=category,  # type: ignore[arg-type]
         status=status,  # type: ignore[arg-type]
         description=asset.description,
-        serial_number=asset.serial_number,
         vendor=asset.vendor,
         purchase_date=asset.purchase_date,
         purchase_price=asset.purchase_price,
+        purchase_price_currency=asset.purchase_price_currency,
         current_value=asset.current_value,
         tags=tags,
+        location_note=asset.location_note,
+        image_url=asset.image_url,
+        purchase_url=asset.purchase_url,
         notes=asset.notes,
         created_at=asset.created_at,
         updated_at=asset.updated_at,
+        **sections,
     )
 
 
@@ -110,12 +136,15 @@ async def get_asset(
 
 
 async def get_asset_public(
-    db: AsyncSession, asset_id: uuid.UUID, owner_id: uuid.UUID
+    db: AsyncSession,
+    asset_id: uuid.UUID,
+    owner_id: uuid.UUID,
+    include: list[str] | None = None,
 ) -> AssetPublicRead | None:
     asset = await get_asset(db, asset_id, owner_id)
     if not asset:
         return None
-    return await _build_asset_public(db, asset)
+    return await _build_asset_public(db, asset, include=include)
 
 
 async def list_assets(

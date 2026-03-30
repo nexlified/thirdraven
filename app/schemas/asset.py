@@ -3,6 +3,12 @@ from datetime import date, datetime
 
 from pydantic import BaseModel
 
+from app.schemas.asset_extensions import (
+    DigitalAssetPublic,
+    DocumentAssetPublic,
+    FinancialAssetPublic,
+    PhysicalAssetPublic,
+)
 from app.schemas.vocabulary import TermSlim
 
 
@@ -11,21 +17,15 @@ class AssetCreate(BaseModel):
     category: str  # slug from "asset-categories" vocabulary
     status: str = "active"  # slug from "asset-statuses" vocabulary
     description: str | None = None
-    serial_number: str | None = None
     vendor: str | None = None
     purchase_date: date | None = None
     purchase_price: float | None = None
+    purchase_price_currency: str | None = None  # ISO 4217
     current_value: float | None = None
     tags: list[str] = []  # slugs from "asset-tags" vocabulary
-    brand: str | None = None
-    model_number: str | None = None
-    color: str | None = None
-    condition: str | None = None
     location_note: str | None = None
-    barcode: str | None = None
     image_url: str | None = None
     purchase_url: str | None = None
-    purchase_currency: str | None = None
     notes: str | None = None
 
 
@@ -34,21 +34,15 @@ class AssetUpdate(BaseModel):
     category: str | None = None
     status: str | None = None
     description: str | None = None
-    serial_number: str | None = None
     vendor: str | None = None
     purchase_date: date | None = None
     purchase_price: float | None = None
+    purchase_price_currency: str | None = None
     current_value: float | None = None
     tags: list[str] | None = None
-    brand: str | None = None
-    model_number: str | None = None
-    color: str | None = None
-    condition: str | None = None
     location_note: str | None = None
-    barcode: str | None = None
     image_url: str | None = None
     purchase_url: str | None = None
-    purchase_currency: str | None = None
     notes: str | None = None
 
 
@@ -59,22 +53,21 @@ class AssetPublicRead(BaseModel):
     category: TermSlim
     status: TermSlim
     description: str | None
-    serial_number: str | None
     vendor: str | None
     purchase_date: date | None
     purchase_price: float | None
+    purchase_price_currency: str | None
     current_value: float | None
     tags: list[TermSlim]
-    brand: str | None = None
-    model_number: str | None = None
-    color: str | None = None
-    condition: str | None = None
     location_note: str | None = None
-    barcode: str | None = None
     image_url: str | None = None
     purchase_url: str | None = None
-    purchase_currency: str | None = None
     notes: str | None
+    # Optional extension sections (loaded via ?include=)
+    physical: PhysicalAssetPublic | None = None
+    document: DocumentAssetPublic | None = None
+    financial: FinancialAssetPublic | None = None
+    digital: DigitalAssetPublic | None = None
     created_at: datetime
     updated_at: datetime
 

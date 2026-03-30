@@ -6,9 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.deps import PaginationParams, get_current_user
-from app.schemas.paginated import Paginated
-from app.crud.person import get_person
-from app.crud.person_life_event import (
+from app.crud.life_event import (
+    add_participant,
     create_life_event,
     create_significant_date,
     delete_life_event,
@@ -16,35 +15,141 @@ from app.crud.person_life_event import (
     get_life_event,
     get_significant_date,
     list_life_events,
+    list_life_events_for_person,
     list_significant_dates,
+    remove_participant,
     update_life_event,
     update_significant_date,
 )
+from app.crud.person import get_person
 from app.models.user import User
-from app.schemas.person_life_event import (
+from app.schemas.life_event import (
     LifeEventCreate,
+    LifeEventParticipantCreate,
     LifeEventPublic,
     LifeEventUpdate,
     SignificantDateCreate,
     SignificantDatePublic,
     SignificantDateUpdate,
 )
+from app.schemas.paginated import Paginated
+
+# ── Standalone life events (owner-scoped) ─────────────────────────────────────
+
+life_events_standalone_router = APIRouter(
+    prefix="/life-events", tags=["life-events"]
+)
+
+
+@life_events_standalone_router.post(
+    "/", response_model=LifeEventPublic, status_code=status.HTTP_201_CREATED
+)
+async def create_event(
+    data: LifeEventCreate,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    return await create_life_event(db, current_user.id, data)
+
+
+@life_events_standalone_router.get("/", response_model=Paginated[LifeEventPublic])
+async def list_events(
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
+):
+    items, total = await list_life_events(
+        db, current_user.id, skip=pagination.skip, limit=pagination.limit
+    )
+    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+
+
+@life_events_standalone_router.get("/{event_id}", response_model=LifeEventPublic)
+async def get_event(
+    event_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    event = await get_life_event(db, event_id, current_user.id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Life event not found")
+    return event
+
+
+@life_events_standalone_router.patch("/{event_id}", response_model=LifeEventPublic)
+async def patch_event(
+    event_id: uuid.UUID,
+    data: LifeEventUpdate,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    event = await update_life_event(db, event_id, current_user.id, data)
+    if not event:
+        raise HTTPException(status_code=404, detail="Life event not found")
+    return event
+
+
+@life_events_standalone_router.delete(
+    "/{event_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_event(
+    event_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    deleted = await delete_life_event(db, event_id, current_user.id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Life event not found")
+
+
+# ── Participants ──────────────────────────────────────────────────────────────
+
+
+@life_events_standalone_router.post(
+    "/{event_id}/participants/",
+    response_model=LifeEventPublic,
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_event_participant(
+    event_id: uuid.UUID,
+    data: LifeEventParticipantCreate,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    result = await add_participant(
+        db, event_id, data.person_id, current_user.id, role=data.role
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Life event not found")
+    return result
+
+
+@life_events_standalone_router.delete(
+    "/{event_id}/participants/{person_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def remove_event_participant(
+    event_id: uuid.UUID,
+    person_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    removed = await remove_participant(db, event_id, person_id, current_user.id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Participant not found")
+
+
+# ── Person-scoped life events (backward compat) ──────────────────────────────
 
 life_events_router = APIRouter(
     prefix="/persons/{person_id}/life-events", tags=["life-events"]
 )
-significant_dates_router = APIRouter(
-    prefix="/persons/{person_id}/significant-dates", tags=["significant-dates"]
-)
-
-
-# ── Life Events ────────────────────────────────────────────────────────────────
 
 
 @life_events_router.post(
     "/", response_model=LifeEventPublic, status_code=status.HTTP_201_CREATED
 )
-async def create_event(
+async def create_person_event(
     person_id: uuid.UUID,
     data: LifeEventCreate,
     db: Annotated[AsyncSession, Depends(get_session)],
@@ -53,11 +158,17 @@ async def create_event(
     person = await get_person(db, person_id, current_user.id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
-    return await create_life_event(db, person_id, current_user.id, data)
+    # Add the person as primary participant if not already included
+    person_ids = {p.person_id for p in data.participants}
+    if person_id not in person_ids:
+        data.participants.append(
+            LifeEventParticipantCreate(person_id=person_id, role="primary")
+        )
+    return await create_life_event(db, current_user.id, data)
 
 
 @life_events_router.get("/", response_model=Paginated[LifeEventPublic])
-async def list_events(
+async def list_person_events(
     person_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
@@ -66,55 +177,17 @@ async def list_events(
     person = await get_person(db, person_id, current_user.id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
-    items, total = await list_life_events(
+    items, total = await list_life_events_for_person(
         db, person_id, current_user.id, skip=pagination.skip, limit=pagination.limit
     )
     return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
-@life_events_router.get("/{event_id}", response_model=LifeEventPublic)
-async def get_event(
-    person_id: uuid.UUID,
-    event_id: uuid.UUID,
-    db: Annotated[AsyncSession, Depends(get_session)],
-    current_user: Annotated[User, Depends(get_current_user)],
-):
-    event = await get_life_event(db, event_id, current_user.id)
-    if not event or event.person_id != person_id:
-        raise HTTPException(status_code=404, detail="Life event not found")
-    return event
+# ── Significant Dates ─────────────────────────────────────────────────────────
 
-
-@life_events_router.patch("/{event_id}", response_model=LifeEventPublic)
-async def patch_event(
-    person_id: uuid.UUID,
-    event_id: uuid.UUID,
-    data: LifeEventUpdate,
-    db: Annotated[AsyncSession, Depends(get_session)],
-    current_user: Annotated[User, Depends(get_current_user)],
-):
-    event = await update_life_event(db, event_id, current_user.id, data)
-    if not event or event.person_id != person_id:
-        raise HTTPException(status_code=404, detail="Life event not found")
-    return event
-
-
-@life_events_router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_event(
-    person_id: uuid.UUID,
-    event_id: uuid.UUID,
-    db: Annotated[AsyncSession, Depends(get_session)],
-    current_user: Annotated[User, Depends(get_current_user)],
-):
-    person = await get_person(db, person_id, current_user.id)
-    if not person:
-        raise HTTPException(status_code=404, detail="Person not found")
-    deleted = await delete_life_event(db, event_id, current_user.id)
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Life event not found")
-
-
-# ── Significant Dates ──────────────────────────────────────────────────────────
+significant_dates_router = APIRouter(
+    prefix="/persons/{person_id}/significant-dates", tags=["significant-dates"]
+)
 
 
 @significant_dates_router.post(

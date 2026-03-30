@@ -87,9 +87,8 @@ def app_client():
     with patch(
         "app.api.v1.persons.get_user_household_id",
         new=AsyncMock(return_value=None),
-    ):
-        with TestClient(app) as client:
-            yield client
+    ), TestClient(app) as client:
+        yield client
 
     app.dependency_overrides.clear()
 
@@ -362,8 +361,8 @@ def test_get_person_schema(app_client):
     assert resp.status_code == 200
     data = resp.json()
     for key in (
-        "prefixes", "genders", "occupations", "eye_colors", "hair_colors",
-        "communication_styles", "tags", "relationship_types", "preferred_contact",
+        "prefixes", "genders", "occupations",
+        "tags", "relationship_types", "preferred_contact",
         "address_types", "channel_types",
     ):
         assert key in data

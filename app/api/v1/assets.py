@@ -14,8 +14,8 @@ from app.crud.asset import (
     update_asset,
 )
 from app.models.user import User
-from app.schemas.paginated import Paginated
 from app.schemas.asset import AssetCreate, AssetPublicRead, AssetUpdate
+from app.schemas.paginated import Paginated
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
@@ -48,8 +48,10 @@ async def get_one(
     asset_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
+    include: str = "",
 ):
-    asset = await get_asset_public(db, asset_id, current_user.id)
+    include_list = [s.strip() for s in include.split(",") if s.strip()] or None
+    asset = await get_asset_public(db, asset_id, current_user.id, include=include_list)
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
     return asset

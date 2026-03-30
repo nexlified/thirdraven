@@ -16,7 +16,6 @@ from app.crud.contact import (
     update_contact,
 )
 from app.models.user import User
-from app.schemas.paginated import Paginated
 from app.schemas.contact import (
     ContactCreate,
     ContactPublicRead,
@@ -25,6 +24,7 @@ from app.schemas.contact import (
     RelationshipCreate,
     RelationshipPublic,
 )
+from app.schemas.paginated import Paginated
 
 router = APIRouter(prefix="/contacts", tags=["contacts"])
 

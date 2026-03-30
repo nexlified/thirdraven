@@ -17,7 +17,6 @@ from app.crud.event import (
     update_event,
 )
 from app.models.user import User
-from app.schemas.paginated import Paginated
 from app.schemas.event import (
     EventCreate,
     EventPersonCreate,
@@ -25,6 +24,7 @@ from app.schemas.event import (
     EventPublic,
     EventUpdate,
 )
+from app.schemas.paginated import Paginated
 
 events_router = APIRouter(prefix="/events", tags=["events"])
 event_persons_router = APIRouter(

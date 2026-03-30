@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.deps import PaginationParams, get_current_user
+from app.crud.household import get_user_household_id
 from app.crud.organization import (
     create_org,
     get_org,
@@ -17,10 +18,8 @@ from app.crud.organization import (
     update_org,
     update_person_org,
 )
-from app.crud.household import get_user_household_id
 from app.crud.person import get_person
 from app.models.user import User
-from app.schemas.paginated import Paginated
 from app.schemas.organization import (
     OrgCreate,
     OrgPublic,
@@ -29,6 +28,7 @@ from app.schemas.organization import (
     PersonOrgPublic,
     PersonOrgUpdate,
 )
+from app.schemas.paginated import Paginated
 
 orgs_router = APIRouter(prefix="/organizations", tags=["organizations"])
 person_orgs_router = APIRouter(

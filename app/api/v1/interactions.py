@@ -15,12 +15,12 @@ from app.crud.interaction import (
 )
 from app.crud.person import get_person
 from app.models.user import User
-from app.schemas.paginated import Paginated
 from app.schemas.interaction import (
     InteractionCreate,
     InteractionPublicRead,
     InteractionUpdate,
 )
+from app.schemas.paginated import Paginated
 
 router = APIRouter(prefix="/persons/{person_id}/interactions", tags=["interactions"])
 

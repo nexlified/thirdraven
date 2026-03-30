@@ -14,8 +14,8 @@ from app.crud.note import (
     update_note,
 )
 from app.models.user import User
-from app.schemas.paginated import Paginated
 from app.schemas.note import NoteCreate, NotePublicRead, NoteUpdate
+from app.schemas.paginated import Paginated
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 

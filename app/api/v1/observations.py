@@ -15,12 +15,12 @@ from app.crud.observation import (
 )
 from app.crud.person import get_person
 from app.models.user import User
-from app.schemas.paginated import Paginated
 from app.schemas.observation import (
     ObservationCreate,
     ObservationPublic,
     ObservationUpdate,
 )
+from app.schemas.paginated import Paginated
 
 router = APIRouter(
     prefix="/persons/{person_id}/observations", tags=["observations"]

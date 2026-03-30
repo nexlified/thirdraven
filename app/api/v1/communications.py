@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.deps import PaginationParams, get_current_user
-from app.schemas.paginated import Paginated
 from app.crud.communication import (
     create_communication,
     delete_communication,
@@ -23,6 +22,7 @@ from app.schemas.communication import (
     CommPublic,
     CommUpdate,
 )
+from app.schemas.paginated import Paginated
 
 router = APIRouter(prefix="/communications", tags=["communications"])
 

@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import delete, update
@@ -13,7 +12,6 @@ from app.schemas.household import (
     HouseholdMemberPublic,
     HouseholdPublic,
 )
-
 
 # ── Shared helper ──────────────────────────────────────────────────────────────
 

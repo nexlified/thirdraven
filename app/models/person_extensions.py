@@ -59,35 +59,6 @@ class PersonContext(SQLModel, table=True):
     relationship_nature: str | None = None  # "personal" | "professional" | "mixed"
 
 
-class PersonPhysical(SQLModel, table=True):
-    __tablename__ = "person_physical"
-
-    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
-    person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-    height_cm: float | None = None
-    eye_color_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
-    hair_color_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
-    blood_type: str | None = None
-
-
-class PersonPersonality(SQLModel, table=True):
-    __tablename__ = "person_personality"
-
-    id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
-    person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-    interests: str | None = None
-    food_preferences: str | None = None
-    dietary_restrictions: str | None = None
-    personality_notes: str | None = None
-    communication_style_term_id: uuid.UUID | None = Field(
-        default=None, foreign_key="term.id"
-    )
-
-
 class PersonChannel(SQLModel, table=True):
     """Generic contact channel — replaces PersonContactMethod + PersonSocial."""
 

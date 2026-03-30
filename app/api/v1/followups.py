@@ -15,8 +15,8 @@ from app.crud.followup import (
 )
 from app.crud.person import get_person
 from app.models.user import User
-from app.schemas.paginated import Paginated
 from app.schemas.followup import FollowUpCreate, FollowUpPublic, FollowUpUpdate
+from app.schemas.paginated import Paginated
 
 router = APIRouter(
     prefix="/persons/{person_id}/follow-ups", tags=["follow-ups"]

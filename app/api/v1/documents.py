@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.deps import PaginationParams, get_current_user
-from app.schemas.paginated import Paginated
 from app.crud.document import (
     create_document,
     delete_document,
@@ -16,6 +15,7 @@ from app.crud.document import (
 )
 from app.models.user import User
 from app.schemas.document import DocumentCreate, DocumentPublic, DocumentUpdate
+from app.schemas.paginated import Paginated
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
