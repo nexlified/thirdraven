@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { AppLayout } from "../components/AppLayout";
 import { SearchableSelect, ClosenessMeter } from "../components/FormControls";
 import { useSettings } from "../hooks/useSettings";
@@ -22,6 +23,11 @@ export function Settings() {
       .catch(() => {})
       .finally(() => setRefLoading(false));
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDraft({ ...settings });
+  }, [settings]);
 
   const countryOptions = countries.map((c) => ({
     id: c.alpha2,
@@ -169,6 +175,9 @@ export function Settings() {
             {saveStatus === "saved" && (
               <span className="save-status saved">Saved ✓</span>
             )}
+            <Link to="/forgot-password" className="btn-secondary" style={{ textDecoration: "none" }}>
+              Reset password
+            </Link>
           </div>
         </div>
       )}

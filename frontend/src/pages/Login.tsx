@@ -71,7 +71,8 @@ export function Login() {
 
         <p className="auth-footer">
           Don't have an account?{" "}
-          <Link to="/register">Create one</Link>
+          <Link to="/register">Create one</Link> · {" "}
+          <Link to="/forgot-password">Forgot password?</Link>
         </p>
       </div>
     </div>

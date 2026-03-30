@@ -5,9 +5,11 @@ import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { Dashboard } from "./pages/Dashboard";
 import { Events } from "./pages/Events";
+import { ForgotPassword } from "./pages/ForgotPassword";
 import { People } from "./pages/People";
 import { PersonDetail } from "./pages/PersonDetail";
 import { Tasks } from "./pages/Tasks";
+import { ResetPassword } from "./pages/ResetPassword";
 import { Organizations } from "./pages/Organizations";
 import { Vocabularies } from "./pages/Vocabularies";
 import { Settings } from "./pages/Settings";
@@ -19,6 +21,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/dashboard"
             element={
