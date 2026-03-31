@@ -10,6 +10,12 @@ on:
     paths:
       - 'docs/**'
 
+# Allow one concurrent deployment; don't cancel in-progress runs so we finish
+# any deploy that has already started.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -28,3 +34,30 @@ jobs:
 
       - name: Build
         run: cd docs && npm run docs:build
+
+      # Upload the built site as a Pages artifact only on main-branch pushes.
+      - name: Upload Pages artifact
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/.vitepress/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+
+    # Grant the GITHUB_TOKEN the permissions required by deploy-pages.
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
