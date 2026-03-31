@@ -3,10 +3,15 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'ThirdRaven',
   description: 'Personal Entity & Relationship Manager',
+  // base must match the GitHub repository name when deploying to GitHub Pages
+  // as a project site (https://<org>.github.io/thirdraven/).
+  // Update this value if you deploy to a custom domain (set base: '/').
+  base: '/thirdraven/',
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/development' },
       { text: 'API', link: '/api-reference' },
+      { text: 'dev', link: '/' },
     ],
     sidebar: [
       { text: 'Architecture', link: '/architecture' },
@@ -22,6 +27,7 @@ export default defineConfig({
           { text: 'Migration Plan', link: '/specs/migration-plan' },
         ],
       },
+      { text: 'Publishing Docs', link: '/publishing' },
     ],
   },
 })
