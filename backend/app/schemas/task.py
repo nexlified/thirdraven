@@ -15,6 +15,7 @@ class TaskCreate(BaseModel):
     person_id: uuid.UUID | None = None
     asset_id: uuid.UUID | None = None
     subscription_id: uuid.UUID | None = None
+    event_id: uuid.UUID | None = None
     tags: list[str] = []  # slugs from "task-tags" vocabulary
 
 
@@ -27,6 +28,7 @@ class TaskUpdate(BaseModel):
     person_id: uuid.UUID | None = None
     asset_id: uuid.UUID | None = None
     subscription_id: uuid.UUID | None = None
+    event_id: uuid.UUID | None = None
     tags: list[str] | None = None
 
 
@@ -42,6 +44,7 @@ class TaskPublicRead(BaseModel):
     person_id: uuid.UUID | None
     asset_id: uuid.UUID | None
     subscription_id: uuid.UUID | None
+    event_id: uuid.UUID | None
     tags: list[TermSlim]
     created_at: datetime
     updated_at: datetime
@@ -54,3 +57,4 @@ class TaskSummary(BaseModel):
     by_status: dict[str, int]
     overdue: int
     due_today: int
+    by_priority: dict[str, int] = {}

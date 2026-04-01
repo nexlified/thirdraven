@@ -20,6 +20,7 @@ class Task(SQLModel, table=True):
     subscription_id: uuid.UUID | None = Field(
         default=None, foreign_key="subscription.id"
     )
+    event_id: uuid.UUID | None = Field(default=None, foreign_key="event.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     deleted_at: datetime | None = None

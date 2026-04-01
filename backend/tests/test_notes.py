@@ -10,13 +10,14 @@ from app.api.v1.notes import router as notes_router
 from app.core.database import get_session
 from app.core.deps import get_current_user
 from app.models.user import User
-from app.schemas.note import NotePublicRead
+from app.schemas.note import NotePublicRead, NoteStatistics
 from app.schemas.vocabulary import TermSlim
 
 OWNER_ID = uuid.uuid4()
 NOTE_ID = uuid.uuid4()
 PERSON_ID = uuid.uuid4()
 ASSET_ID = uuid.uuid4()
+EVENT_ID = uuid.uuid4()
 TAG_TERM_ID = uuid.uuid4()
 
 FAKE_USER = User(
@@ -41,6 +42,7 @@ def make_note(**kwargs) -> NotePublicRead:
         person_id=None,
         asset_id=None,
         subscription_id=None,
+        event_id=None,
         tags=[],
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
@@ -140,6 +142,17 @@ def test_create_note_with_all_fields(app_client):
     assert body["tags"][0]["slug"] == "important"
 
 
+def test_create_note_with_event_id(app_client):
+    note = make_note(event_id=EVENT_ID)
+    with patch("app.api.v1.notes.create_note", new=AsyncMock(return_value=note)):
+        resp = app_client.post(
+            "/api/v1/notes/",
+            json={"title": "Event note", "event_id": str(EVENT_ID)},
+        )
+    assert resp.status_code == 201
+    assert resp.json()["event_id"] == str(EVENT_ID)
+
+
 # ── GET /notes/ ───────────────────────────────────────────────────────────────
 
 
@@ -190,6 +203,83 @@ def test_list_notes_asset_filter(app_client):
     assert resp.status_code == 200
     call_kwargs = mock_list.call_args.kwargs
     assert call_kwargs["asset_id"] == ASSET_ID
+
+
+def test_list_notes_search_filter(app_client):
+    with patch(
+        "app.api.v1.notes.list_notes", new=AsyncMock(return_value=([], 0))
+    ) as mock_list:
+        resp = app_client.get("/api/v1/notes/?q=meeting")
+    assert resp.status_code == 200
+    call_kwargs = mock_list.call_args.kwargs
+    assert call_kwargs["q"] == "meeting"
+
+
+def test_list_notes_no_search_filter(app_client):
+    with patch(
+        "app.api.v1.notes.list_notes", new=AsyncMock(return_value=([], 0))
+    ) as mock_list:
+        resp = app_client.get("/api/v1/notes/")
+    assert resp.status_code == 200
+    call_kwargs = mock_list.call_args.kwargs
+    assert call_kwargs["q"] is None
+
+
+def test_list_notes_event_filter(app_client):
+    with patch(
+        "app.api.v1.notes.list_notes", new=AsyncMock(return_value=([], 0))
+    ) as mock_list:
+        resp = app_client.get(f"/api/v1/notes/?event_id={EVENT_ID}")
+    assert resp.status_code == 200
+    call_kwargs = mock_list.call_args.kwargs
+    assert call_kwargs["event_id"] == EVENT_ID
+
+
+# ── GET /notes/statistics ─────────────────────────────────────────────────────
+
+
+def test_get_note_statistics(app_client):
+    stats = NoteStatistics(
+        total=5,
+        pinned=2,
+        by_attachment={
+            "person": 1,
+            "asset": 1,
+            "subscription": 0,
+            "event": 0,
+            "unlinked": 3,
+        },
+    )
+    with patch(
+        "app.api.v1.notes.get_note_statistics", new=AsyncMock(return_value=stats)
+    ):
+        resp = app_client.get("/api/v1/notes/statistics")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] == 5
+    assert body["pinned"] == 2
+    assert body["by_attachment"]["unlinked"] == 3
+    assert body["by_attachment"]["person"] == 1
+
+
+def test_get_note_statistics_empty(app_client):
+    stats = NoteStatistics(
+        total=0,
+        pinned=0,
+        by_attachment={
+            "person": 0,
+            "asset": 0,
+            "subscription": 0,
+            "event": 0,
+            "unlinked": 0,
+        },
+    )
+    with patch(
+        "app.api.v1.notes.get_note_statistics", new=AsyncMock(return_value=stats)
+    ):
+        resp = app_client.get("/api/v1/notes/statistics")
+    assert resp.status_code == 200
+    assert resp.json()["total"] == 0
 
 
 # ── GET /notes/{note_id} ──────────────────────────────────────────────────────

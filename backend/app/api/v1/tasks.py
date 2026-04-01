@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -48,6 +49,10 @@ async def list_all(
     person_id: uuid.UUID | None = None,
     asset_id: uuid.UUID | None = None,
     subscription_id: uuid.UUID | None = None,
+    event_id: uuid.UUID | None = None,
+    due_before: date | None = None,
+    due_after: date | None = None,
+    overdue: bool | None = None,
 ):
     items, total = await list_tasks(
         db,
@@ -59,6 +64,10 @@ async def list_all(
         person_id=person_id,
         asset_id=asset_id,
         subscription_id=subscription_id,
+        event_id=event_id,
+        due_before=due_before,
+        due_after=due_after,
+        overdue=overdue,
     )
     return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 

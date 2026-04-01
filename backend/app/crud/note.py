@@ -1,14 +1,14 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.crud.vocabulary import resolve_term_slug
 from app.models.note import Note, NoteTag
 from app.models.vocabulary import Term
-from app.schemas.note import NoteCreate, NotePublicRead, NoteUpdate
+from app.schemas.note import NoteCreate, NotePublicRead, NoteStatistics, NoteUpdate
 from app.schemas.vocabulary import TermSlim
 
 # ── Tag helpers ────────────────────────────────────────────────────────────────
@@ -46,6 +46,7 @@ async def _build_note_public(db: AsyncSession, note: Note) -> NotePublicRead:
         person_id=note.person_id,
         asset_id=note.asset_id,
         subscription_id=note.subscription_id,
+        event_id=note.event_id,
         tags=tags,
         created_at=note.created_at,
         updated_at=note.updated_at,
@@ -101,13 +102,20 @@ async def list_notes(
     owner_id: uuid.UUID,
     skip: int = 0,
     limit: int = 50,
+    q: str | None = None,
     pinned: bool | None = None,
     person_id: uuid.UUID | None = None,
     asset_id: uuid.UUID | None = None,
     subscription_id: uuid.UUID | None = None,
+    event_id: uuid.UUID | None = None,
 ) -> tuple[list[NotePublicRead], int]:
     base = select(Note).where(Note.owner_id == owner_id, Note.deleted_at.is_(None))
 
+    if q is not None:
+        pattern = f"%{q}%"
+        base = base.where(
+            or_(Note.title.ilike(pattern), Note.body.ilike(pattern))
+        )
     if pinned is not None:
         base = base.where(Note.pinned == pinned)
     if person_id is not None:
@@ -116,6 +124,8 @@ async def list_notes(
         base = base.where(Note.asset_id == asset_id)
     if subscription_id is not None:
         base = base.where(Note.subscription_id == subscription_id)
+    if event_id is not None:
+        base = base.where(Note.event_id == event_id)
 
     total = (
         await db.execute(select(func.count()).select_from(base.subquery()))
@@ -163,3 +173,37 @@ async def soft_delete_note(
     db.add(note)
     await db.commit()
     return note
+
+
+async def get_note_statistics(
+    db: AsyncSession, owner_id: uuid.UUID
+) -> NoteStatistics:
+    result = await db.execute(
+        select(Note).where(Note.owner_id == owner_id, Note.deleted_at.is_(None))
+    )
+    notes = result.scalars().all()
+
+    pinned = 0
+    by_attachment: dict[str, int] = {
+        "person": 0,
+        "asset": 0,
+        "subscription": 0,
+        "event": 0,
+        "unlinked": 0,
+    }
+
+    for note in notes:
+        if note.pinned:
+            pinned += 1
+        if note.person_id:
+            by_attachment["person"] += 1
+        elif note.asset_id:
+            by_attachment["asset"] += 1
+        elif note.subscription_id:
+            by_attachment["subscription"] += 1
+        elif note.event_id:
+            by_attachment["event"] += 1
+        else:
+            by_attachment["unlinked"] += 1
+
+    return NoteStatistics(total=len(notes), pinned=pinned, by_attachment=by_attachment)

@@ -17,6 +17,7 @@ OWNER_ID = uuid.uuid4()
 TASK_ID = uuid.uuid4()
 PERSON_ID = uuid.uuid4()
 ASSET_ID = uuid.uuid4()
+EVENT_ID = uuid.uuid4()
 TAG_TERM_ID = uuid.uuid4()
 
 FAKE_USER = User(
@@ -44,6 +45,7 @@ def make_task(**kwargs) -> TaskPublicRead:
         person_id=None,
         asset_id=None,
         subscription_id=None,
+        event_id=None,
         tags=[],
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
@@ -149,6 +151,17 @@ def test_create_task_with_all_fields(app_client):
     assert len(body["tags"]) == 1
 
 
+def test_create_task_with_event_id(app_client):
+    task = make_task(event_id=EVENT_ID)
+    with patch("app.api.v1.tasks.create_task", new=AsyncMock(return_value=task)):
+        resp = app_client.post(
+            "/api/v1/tasks/",
+            json={"title": "Event task", "event_id": str(EVENT_ID)},
+        )
+    assert resp.status_code == 201
+    assert resp.json()["event_id"] == str(EVENT_ID)
+
+
 # ── GET /tasks/summary ────────────────────────────────────────────────────────
 
 
@@ -169,6 +182,25 @@ def test_get_task_summary(app_client):
     assert body["by_status"]["todo"] == 5
     assert body["overdue"] == 2
     assert body["due_today"] == 1
+
+
+def test_get_task_summary_includes_by_priority(app_client):
+    summary = TaskSummary(
+        total=6,
+        by_status={"todo": 3, "in_progress": 2, "done": 1},
+        overdue=1,
+        due_today=0,
+        by_priority={"low": 1, "normal": 3, "high": 2},
+    )
+    with patch(
+        "app.api.v1.tasks.get_task_summary", new=AsyncMock(return_value=summary)
+    ):
+        resp = app_client.get("/api/v1/tasks/summary")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["by_priority"]["normal"] == 3
+    assert body["by_priority"]["high"] == 2
+    assert "low" in body["by_priority"]
 
 
 # ── GET /tasks/ ───────────────────────────────────────────────────────────────
@@ -221,6 +253,52 @@ def test_list_tasks_person_filter(app_client):
     assert resp.status_code == 200
     call_kwargs = mock_list.call_args.kwargs
     assert call_kwargs["person_id"] == PERSON_ID
+
+
+def test_list_tasks_event_filter(app_client):
+    with patch(
+        "app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=([], 0))
+    ) as mock_list:
+        resp = app_client.get(f"/api/v1/tasks/?event_id={EVENT_ID}")
+    assert resp.status_code == 200
+    call_kwargs = mock_list.call_args.kwargs
+    assert call_kwargs["event_id"] == EVENT_ID
+
+
+def test_list_tasks_due_before_filter(app_client):
+    with patch(
+        "app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=([], 0))
+    ) as mock_list:
+        resp = app_client.get("/api/v1/tasks/?due_before=2026-04-30")
+    assert resp.status_code == 200
+    assert mock_list.call_args.kwargs["due_before"] == date(2026, 4, 30)
+
+
+def test_list_tasks_due_after_filter(app_client):
+    with patch(
+        "app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=([], 0))
+    ) as mock_list:
+        resp = app_client.get("/api/v1/tasks/?due_after=2026-01-01")
+    assert resp.status_code == 200
+    assert mock_list.call_args.kwargs["due_after"] == date(2026, 1, 1)
+
+
+def test_list_tasks_overdue_filter_true(app_client):
+    with patch(
+        "app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=([], 0))
+    ) as mock_list:
+        resp = app_client.get("/api/v1/tasks/?overdue=true")
+    assert resp.status_code == 200
+    assert mock_list.call_args.kwargs["overdue"] is True
+
+
+def test_list_tasks_overdue_filter_false(app_client):
+    with patch(
+        "app.api.v1.tasks.list_tasks", new=AsyncMock(return_value=([], 0))
+    ) as mock_list:
+        resp = app_client.get("/api/v1/tasks/?overdue=false")
+    assert resp.status_code == 200
+    assert mock_list.call_args.kwargs["overdue"] is False
 
 
 # ── GET /tasks/{task_id} ──────────────────────────────────────────────────────

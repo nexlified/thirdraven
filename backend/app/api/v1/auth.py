@@ -7,9 +7,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from app.core.deps import get_current_user
 from app.core.security import create_access_token, verify_password
-from app.crud.user import create_user, get_user_by_username
+from app.crud.user import (
+    create_password_reset_token,
+    create_user,
+    get_user_by_username,
+    get_user_preferences,
+    reset_password_with_token,
+    update_user_preferences,
+)
 from app.models.user import User
-from app.schemas.user import Token, UserCreate, UserPublic
+from app.schemas.user import (
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
+    MessageResponse,
+    ResetPasswordRequest,
+    Token,
+    UserCreate,
+    UserPreferencesPublic,
+    UserPreferencesUpdate,
+    UserPublic,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -48,3 +65,50 @@ async def get_me(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     return current_user
+
+
+@router.get("/me/preferences", response_model=UserPreferencesPublic)
+async def get_preferences(
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    return UserPreferencesPublic(**get_user_preferences(current_user))
+
+
+@router.patch("/me/preferences", response_model=UserPreferencesPublic)
+async def patch_preferences(
+    data: UserPreferencesUpdate,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    prefs = await update_user_preferences(
+        db,
+        current_user,
+        data.model_dump(exclude_unset=True),
+    )
+    return UserPreferencesPublic(**prefs)
+
+
+@router.post("/forgot-password", response_model=ForgotPasswordResponse)
+async def forgot_password(
+    data: ForgotPasswordRequest,
+    db: Annotated[AsyncSession, Depends(get_session)],
+):
+    token = await create_password_reset_token(db, data.email)
+    return ForgotPasswordResponse(
+        message="If the account exists, a reset token has been generated.",
+        reset_token=token,
+    )
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+async def reset_password(
+    data: ResetPasswordRequest,
+    db: Annotated[AsyncSession, Depends(get_session)],
+):
+    if len(data.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    ok = await reset_password_with_token(db, data.reset_token, data.new_password)
+    if not ok:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    return MessageResponse(message="Password updated successfully")
+

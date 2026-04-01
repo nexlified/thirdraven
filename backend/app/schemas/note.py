@@ -13,6 +13,7 @@ class NoteCreate(BaseModel):
     person_id: uuid.UUID | None = None
     asset_id: uuid.UUID | None = None
     subscription_id: uuid.UUID | None = None
+    event_id: uuid.UUID | None = None
     tags: list[str] = []  # slugs from "note-tags" vocabulary
 
 
@@ -23,6 +24,7 @@ class NoteUpdate(BaseModel):
     person_id: uuid.UUID | None = None
     asset_id: uuid.UUID | None = None
     subscription_id: uuid.UUID | None = None
+    event_id: uuid.UUID | None = None
     tags: list[str] | None = None
 
 
@@ -35,8 +37,15 @@ class NotePublicRead(BaseModel):
     person_id: uuid.UUID | None
     asset_id: uuid.UUID | None
     subscription_id: uuid.UUID | None
+    event_id: uuid.UUID | None
     tags: list[TermSlim]
     created_at: datetime
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class NoteStatistics(BaseModel):
+    total: int
+    pinned: int
+    by_attachment: dict[str, int]

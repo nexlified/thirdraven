@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -51,6 +51,7 @@ async def _build_task_public(db: AsyncSession, task: Task) -> TaskPublicRead:
         person_id=task.person_id,
         asset_id=task.asset_id,
         subscription_id=task.subscription_id,
+        event_id=task.event_id,
         tags=tags,
         created_at=task.created_at,
         updated_at=task.updated_at,
@@ -111,6 +112,10 @@ async def list_tasks(
     person_id: uuid.UUID | None = None,
     asset_id: uuid.UUID | None = None,
     subscription_id: uuid.UUID | None = None,
+    event_id: uuid.UUID | None = None,
+    due_before: date | None = None,
+    due_after: date | None = None,
+    overdue: bool | None = None,
 ) -> tuple[list[TaskPublicRead], int]:
     base = select(Task).where(Task.owner_id == owner_id, Task.deleted_at.is_(None))
 
@@ -124,6 +129,27 @@ async def list_tasks(
         base = base.where(Task.asset_id == asset_id)
     if subscription_id is not None:
         base = base.where(Task.subscription_id == subscription_id)
+    if event_id is not None:
+        base = base.where(Task.event_id == event_id)
+    if due_before is not None:
+        base = base.where(Task.due_date <= due_before)
+    if due_after is not None:
+        base = base.where(Task.due_date >= due_after)
+    if overdue is True:
+        today = date.today()
+        base = base.where(
+            Task.due_date < today,
+            Task.status.notin_(list(_DONE_STATUSES)),
+        )
+    elif overdue is False:
+        today = date.today()
+        base = base.where(
+            or_(
+                Task.due_date.is_(None),
+                Task.due_date >= today,
+                Task.status.in_(list(_DONE_STATUSES)),
+            )
+        )
 
     total = (
         await db.execute(select(func.count()).select_from(base.subquery()))
@@ -188,12 +214,14 @@ async def get_task_summary(db: AsyncSession, owner_id: uuid.UUID) -> TaskSummary
     tasks = result.scalars().all()
 
     by_status: dict[str, int] = {}
+    by_priority: dict[str, int] = {}
     overdue = 0
     due_today = 0
     today = date.today()
 
     for task in tasks:
         by_status[task.status] = by_status.get(task.status, 0) + 1
+        by_priority[task.priority] = by_priority.get(task.priority, 0) + 1
         if task.due_date and task.status not in _DONE_STATUSES:
             if task.due_date < today:
                 overdue += 1
@@ -205,4 +233,5 @@ async def get_task_summary(db: AsyncSession, owner_id: uuid.UUID) -> TaskSummary
         by_status=by_status,
         overdue=overdue,
         due_today=due_today,
+        by_priority=by_priority,
     )
