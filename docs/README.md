@@ -1,11 +1,3 @@
-# ThirdRaven — Docs
-
-VitePress documentation site for ThirdRaven. Contains architecture guides, API reference, data model documentation, and technical specifications.
-
-> Part of the [ThirdRaven monorepo](../README.md).
-
----
-
 ## Setup
 
 ### Prerequisites
