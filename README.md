@@ -1,5 +1,9 @@
 # ThirdRaven
 
+[![Backend](https://github.com/nexlified/thirdraven/actions/workflows/backend.yml/badge.svg)](https://github.com/nexlified/thirdraven/actions/workflows/backend.yml)
+[![Frontend](https://github.com/nexlified/thirdraven/actions/workflows/frontend.yml/badge.svg)](https://github.com/nexlified/thirdraven/actions/workflows/frontend.yml)
+[![Docs](https://github.com/nexlified/thirdraven/actions/workflows/docs.yml/badge.svg)](https://github.com/nexlified/thirdraven/actions/workflows/docs.yml)
+
 A self-hosted personal relationship and knowledge management system — your private "Personal ERP" for tracking people, organizations, interactions, finances, and assets. Built to serve as the data backbone for an AI companion (RavenPair).
 
 This is a **monorepo** containing three sub-packages:
