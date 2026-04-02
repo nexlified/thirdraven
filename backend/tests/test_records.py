@@ -104,9 +104,7 @@ def unauthed_client():
 
 def test_create_record_success(app_client):
     record = make_record()
-    with patch(
-        "app.api.v1.records.create_record", new=AsyncMock(return_value=record)
-    ):
+    with patch("app.api.v1.records.create_record", new=AsyncMock(return_value=record)):
         resp = app_client.post(
             "/api/v1/records/",
             json={"record_type": "license-driving", "title": "UK Driving Licence"},
@@ -211,9 +209,7 @@ def test_get_record_found(app_client):
 
 
 def test_get_record_not_found(app_client):
-    with patch(
-        "app.api.v1.records.get_record", new=AsyncMock(return_value=None)
-    ):
+    with patch("app.api.v1.records.get_record", new=AsyncMock(return_value=None)):
         resp = app_client.get(f"/api/v1/records/{uuid.uuid4()}")
     assert resp.status_code == 404
 
@@ -223,9 +219,7 @@ def test_get_record_not_found(app_client):
 
 def test_patch_record_success(app_client):
     updated = make_record(title="Updated Licence", reminder_days=60)
-    with patch(
-        "app.api.v1.records.update_record", new=AsyncMock(return_value=updated)
-    ):
+    with patch("app.api.v1.records.update_record", new=AsyncMock(return_value=updated)):
         resp = app_client.patch(
             f"/api/v1/records/{RECORD_ID}",
             json={"title": "Updated Licence", "reminder_days": 60},
@@ -236,9 +230,7 @@ def test_patch_record_success(app_client):
 
 
 def test_patch_record_not_found(app_client):
-    with patch(
-        "app.api.v1.records.update_record", new=AsyncMock(return_value=None)
-    ):
+    with patch("app.api.v1.records.update_record", new=AsyncMock(return_value=None)):
         resp = app_client.patch(
             f"/api/v1/records/{uuid.uuid4()}", json={"title": "Ghost"}
         )
@@ -257,8 +249,6 @@ def test_delete_record_success(app_client):
 
 
 def test_delete_record_not_found(app_client):
-    with patch(
-        "app.api.v1.records.delete_record", new=AsyncMock(return_value=None)
-    ):
+    with patch("app.api.v1.records.delete_record", new=AsyncMock(return_value=None)):
         resp = app_client.delete(f"/api/v1/records/{uuid.uuid4()}")
     assert resp.status_code == 404

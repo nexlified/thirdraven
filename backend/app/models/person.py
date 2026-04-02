@@ -23,7 +23,9 @@ class Person(SQLModel, table=True):
     closeness_level: int | None = None
 
     # Household sharing
-    household_id: uuid.UUID | None = Field(default=None, foreign_key="household.id", index=True)
+    household_id: uuid.UUID | None = Field(
+        default=None, foreign_key="household.id", index=True
+    )
     visibility: str = Field(default="private")  # "private" | "household"
 
     # Identity flags

@@ -13,11 +13,15 @@ from app.schemas.person import RelatedPersonRef, RelationshipPublic, Relationshi
 from app.schemas.vocabulary import TermSlim
 
 
-async def _build_rel_public(db: AsyncSession, row: PersonRelationship) -> RelationshipPublic:
+async def _build_rel_public(
+    db: AsyncSession, row: PersonRelationship
+) -> RelationshipPublic:
     term_result = await db.execute(select(Term).where(Term.id == row.label_term_id))
     term = term_result.scalars().first()
 
-    from_result = await db.execute(select(Person).where(Person.id == row.from_person_id))
+    from_result = await db.execute(
+        select(Person).where(Person.id == row.from_person_id)
+    )
     from_person = from_result.scalars().first()
 
     to_result = await db.execute(select(Person).where(Person.id == row.to_person_id))
@@ -155,7 +159,9 @@ async def update_relationship(
     term_row = await db.execute(select(Term).where(Term.id == new_forward_term_id))
     term = term_row.scalars().first()
     reverse_slug = term.reverse_slug if term and term.reverse_slug else data.label
-    new_reverse_term_id = await resolve_term_slug(db, "relationship-types", reverse_slug)
+    new_reverse_term_id = await resolve_term_slug(
+        db, "relationship-types", reverse_slug
+    )
 
     row.label_term_id = new_forward_term_id
     db.add(row)

@@ -83,9 +83,7 @@ async def _update_last_contacted(
     person_id: uuid.UUID,
     communicated_at: datetime | None,
 ) -> None:
-    contacted_date = (
-        communicated_at.date() if communicated_at else date.today()
-    )
+    contacted_date = communicated_at.date() if communicated_at else date.today()
     r = await db.execute(
         select(PersonContext).where(PersonContext.person_id == person_id)
     )
@@ -141,9 +139,7 @@ async def _auto_process(
         # Known person matched
         if person.is_bot:
             row.is_bot = True
-        interaction = await _create_interaction_for_person(
-            db, row, owner_id, person.id
-        )
+        interaction = await _create_interaction_for_person(db, row, owner_id, person.id)
         row.person_id = person.id
         row.interaction_id = interaction.id
         row.status = "matched"
@@ -168,13 +164,15 @@ async def _auto_process(
             ch_type = "mobile"
         else:
             ch_type = row.channel
-        db.add(PersonChannel(
-            person_id=placeholder.id,
-            owner_id=owner_id,
-            value=row.sender_identifier,
-            type=ch_type,
-            is_primary=True,
-        ))
+        db.add(
+            PersonChannel(
+                person_id=placeholder.id,
+                owner_id=owner_id,
+                value=row.sender_identifier,
+                type=ch_type,
+                is_primary=True,
+            )
+        )
         interaction = await _create_interaction_for_person(
             db, row, owner_id, placeholder.id
         )
@@ -353,7 +351,7 @@ async def match_communication(
         occurred_on = (
             row.communicated_at.date() if row.communicated_at else date.today()
         )
-        notes = (row.body[:2000] if row.body and len(row.body) > 2000 else row.body)
+        notes = row.body[:2000] if row.body and len(row.body) > 2000 else row.body
         interaction = Interaction(
             person_id=row.person_id,
             owner_id=owner_id,

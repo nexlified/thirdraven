@@ -44,8 +44,12 @@ async def list_all(
     current_user: Annotated[User, Depends(get_current_user)],
     pagination: Annotated[PaginationParams, Depends(PaginationParams)],
 ):
-    items, total = await list_contacts(db, current_user.id, skip=pagination.skip, limit=pagination.limit)
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    items, total = await list_contacts(
+        db, current_user.id, skip=pagination.skip, limit=pagination.limit
+    )
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{contact_id}", response_model=ContactWithRelationships)

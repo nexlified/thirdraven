@@ -18,9 +18,7 @@ from app.models.user import User
 from app.schemas.goal import GoalCreate, GoalPublic, GoalUpdate
 from app.schemas.paginated import Paginated
 
-router = APIRouter(
-    prefix="/persons/{person_id}/goals", tags=["goals"]
-)
+router = APIRouter(prefix="/persons/{person_id}/goals", tags=["goals"])
 
 
 @router.post("/", response_model=GoalPublic, status_code=status.HTTP_201_CREATED)
@@ -48,10 +46,16 @@ async def list_all(
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
     items, total = await list_goals(
-        db, person_id, current_user.id,
-        active_only=active_only, skip=pagination.skip, limit=pagination.limit,
+        db,
+        person_id,
+        current_user.id,
+        active_only=active_only,
+        skip=pagination.skip,
+        limit=pagination.limit,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{goal_id}", response_model=GoalPublic)

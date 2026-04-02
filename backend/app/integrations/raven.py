@@ -57,7 +57,7 @@ class RavenProvider:
             '  "candidate_id": UUID string of the best match, or null\n'
             '  "reasoning": brief explanation\n'
             '  "question": clarifying question (only when decision is '
-            f'{_nc}, else null)\n'
+            f"{_nc}, else null)\n"
             "Rules:\n"
             "- created: no plausible match exists\n"
             "- merged: confident match (same person)\n"

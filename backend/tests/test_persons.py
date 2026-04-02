@@ -61,7 +61,15 @@ def make_person(**kwargs) -> PersonSlim:
 
 def make_person_extended(**kwargs) -> PersonExtended:
     """Return a PersonExtended with optional sections."""
-    section_keys = {"profile", "professional", "location", "context", "physical", "personality", "channels"}
+    section_keys = {
+        "profile",
+        "professional",
+        "location",
+        "context",
+        "physical",
+        "personality",
+        "channels",
+    }
     slim_kwargs = {k: v for k, v in kwargs.items() if k not in section_keys}
     section_kwargs = {k: v for k, v in kwargs.items() if k in section_keys}
     slim = make_person(**slim_kwargs)
@@ -84,10 +92,13 @@ def app_client():
     app.dependency_overrides[get_session] = override_get_session
     app.dependency_overrides[get_current_user] = override_get_current_user
 
-    with patch(
-        "app.api.v1.persons.get_user_household_id",
-        new=AsyncMock(return_value=None),
-    ), TestClient(app) as client:
+    with (
+        patch(
+            "app.api.v1.persons.get_user_household_id",
+            new=AsyncMock(return_value=None),
+        ),
+        TestClient(app) as client,
+    ):
         yield client
 
     app.dependency_overrides.clear()
@@ -163,7 +174,10 @@ def test_create_person_with_extension_fields(app_client):
 
 def test_list_persons_returns_list(app_client):
     persons = [make_person(), make_person(id=uuid.uuid4(), first_name="Bob")]
-    with patch("app.api.v1.persons.list_persons", new=AsyncMock(return_value=(persons, 2))):
+    with patch(
+        "app.api.v1.persons.list_persons",
+        new=AsyncMock(return_value=(persons, 2)),
+    ):
         resp = app_client.get("/api/v1/persons/")
     assert resp.status_code == 200
     data = resp.json()
@@ -361,9 +375,14 @@ def test_get_person_schema(app_client):
     assert resp.status_code == 200
     data = resp.json()
     for key in (
-        "prefixes", "genders", "occupations",
-        "tags", "relationship_types", "preferred_contact",
-        "address_types", "channel_types",
+        "prefixes",
+        "genders",
+        "occupations",
+        "tags",
+        "relationship_types",
+        "preferred_contact",
+        "address_types",
+        "channel_types",
     ):
         assert key in data
         assert isinstance(data[key], list)

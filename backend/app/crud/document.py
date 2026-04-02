@@ -90,7 +90,9 @@ async def list_documents(
     total = (
         await db.execute(select(func.count()).select_from(base.subquery()))
     ).scalar_one()
-    r = await db.execute(base.order_by(Document.created_at.desc()).offset(skip).limit(limit))
+    r = await db.execute(
+        base.order_by(Document.created_at.desc()).offset(skip).limit(limit)
+    )
     return [await _build(db, row) for row in r.scalars().all()], total
 
 

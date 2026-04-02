@@ -24,7 +24,9 @@ async def add_person_term(
 
 
 async def list_person_terms(db: AsyncSession, person_id: uuid.UUID) -> list[PersonTerm]:
-    result = await db.execute(select(PersonTerm).where(PersonTerm.person_id == person_id))
+    result = await db.execute(
+        select(PersonTerm).where(PersonTerm.person_id == person_id)
+    )
     return list(result.scalars().all())
 
 

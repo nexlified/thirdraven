@@ -131,7 +131,9 @@ def test_create_asset_unauthenticated(unauthed_client):
 
 def test_list_assets_returns_list(app_client):
     assets = [make_asset_public(), make_asset_public(id=uuid.uuid4(), name="Hammer")]
-    with patch("app.api.v1.assets.list_assets", new=AsyncMock(return_value=(assets, 2))):
+    with patch(
+        "app.api.v1.assets.list_assets", new=AsyncMock(return_value=(assets, 2))
+    ):
         resp = app_client.get("/api/v1/assets/")
     assert resp.status_code == 200
     data = resp.json()

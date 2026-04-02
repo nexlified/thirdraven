@@ -103,9 +103,7 @@ class ContactImportHandler(BaseImportHandler):
         phone_by_person: dict = {}
         if person_ids:
             cm_result = await db.execute(
-                select(PersonChannel).where(
-                    PersonChannel.person_id.in_(person_ids)
-                )
+                select(PersonChannel).where(PersonChannel.person_id.in_(person_ids))
             )
             for cm in cm_result.scalars().all():
                 if cm.type == "email" and cm.is_primary:
@@ -179,16 +177,16 @@ class ContactImportHandler(BaseImportHandler):
 
         # Add email/phone as new channels if not already present
         existing_result = await db.execute(
-            select(PersonChannel).where(
-                PersonChannel.person_id == target_id
-            )
+            select(PersonChannel).where(PersonChannel.person_id == target_id)
         )
         existing_values = {ch.value for ch in existing_result.scalars().all()}
         for field, ch_type in (("email", "email"), ("phone", "mobile")):
             value = row.get(field)
             if value and value not in existing_values:
                 await create_channel(
-                    db, target_id, owner_id,
+                    db,
+                    target_id,
+                    owner_id,
                     ChannelCreate(value=value, type=ch_type, is_primary=False),
                 )
 

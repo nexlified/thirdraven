@@ -96,9 +96,7 @@ def unauthed_client():
 
 def test_create_document_success(app_client):
     doc = make_document()
-    with patch(
-        "app.api.v1.documents.create_document", new=AsyncMock(return_value=doc)
-    ):
+    with patch("app.api.v1.documents.create_document", new=AsyncMock(return_value=doc)):
         resp = app_client.post(
             "/api/v1/documents/",
             json={
@@ -197,18 +195,14 @@ def test_list_documents_passes_entity_id_filter(app_client):
 
 def test_get_document_found(app_client):
     doc = make_document()
-    with patch(
-        "app.api.v1.documents.get_document", new=AsyncMock(return_value=doc)
-    ):
+    with patch("app.api.v1.documents.get_document", new=AsyncMock(return_value=doc)):
         resp = app_client.get(f"/api/v1/documents/{DOC_ID}")
     assert resp.status_code == 200
     assert resp.json()["id"] == str(DOC_ID)
 
 
 def test_get_document_not_found(app_client):
-    with patch(
-        "app.api.v1.documents.get_document", new=AsyncMock(return_value=None)
-    ):
+    with patch("app.api.v1.documents.get_document", new=AsyncMock(return_value=None)):
         resp = app_client.get(f"/api/v1/documents/{uuid.uuid4()}")
     assert resp.status_code == 404
 

@@ -181,9 +181,7 @@ def test_get_subscription_summary(app_client):
                 next_billing_date=date(2026, 4, 1),
             )
         ],
-        cost_by_category=[
-            CategorySpend(category="Streaming", monthly_cost=649.0)
-        ],
+        cost_by_category=[CategorySpend(category="Streaming", monthly_cost=649.0)],
     )
     with patch(
         "app.api.v1.subscriptions.get_summary",

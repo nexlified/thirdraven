@@ -27,7 +27,9 @@ class Organization(SQLModel, table=True):
     deleted_at: datetime | None = None
 
     # Household sharing
-    household_id: uuid.UUID | None = Field(default=None, foreign_key="household.id", index=True)
+    household_id: uuid.UUID | None = Field(
+        default=None, foreign_key="household.id", index=True
+    )
     visibility: str = Field(default="private")  # "private" | "household"
 
 

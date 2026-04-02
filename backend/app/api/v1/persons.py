@@ -69,7 +69,9 @@ async def list_all(
         is_bot=is_bot,
         relationship_nature=relationship_nature,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/relationship-health", response_model=list[RelationshipHealthEntry])
@@ -86,17 +88,46 @@ async def get_schema(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     return PersonFieldOptions(
-        prefixes=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "name-prefixes")],
-        genders=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "genders")],
-        occupations=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "occupations")],
-        tags=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "person-tags")],
-        relationship_types=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "relationship-types")],
-        preferred_contact=[TermSlim.model_validate(t) for t in await list_vocab_terms(db, "preferred-contact")],
+        prefixes=[
+            TermSlim.model_validate(t)
+            for t in await list_vocab_terms(db, "name-prefixes")
+        ],
+        genders=[
+            TermSlim.model_validate(t) for t in await list_vocab_terms(db, "genders")
+        ],
+        occupations=[
+            TermSlim.model_validate(t)
+            for t in await list_vocab_terms(db, "occupations")
+        ],
+        tags=[
+            TermSlim.model_validate(t)
+            for t in await list_vocab_terms(db, "person-tags")
+        ],
+        relationship_types=[
+            TermSlim.model_validate(t)
+            for t in await list_vocab_terms(db, "relationship-types")
+        ],
+        preferred_contact=[
+            TermSlim.model_validate(t)
+            for t in await list_vocab_terms(db, "preferred-contact")
+        ],
         address_types=["home", "work", "other"],
         channel_types=[
-            "email", "mobile", "phone", "whatsapp", "telegram", "discord",
-            "twitter", "instagram", "github", "facebook", "linkedin", "website",
-            "signal", "slack", "other",
+            "email",
+            "mobile",
+            "phone",
+            "whatsapp",
+            "telegram",
+            "discord",
+            "twitter",
+            "instagram",
+            "github",
+            "facebook",
+            "linkedin",
+            "website",
+            "signal",
+            "slack",
+            "other",
         ],
     )
 
@@ -111,7 +142,11 @@ async def get_one(
     household_id = await get_user_household_id(db, current_user.id)
     include_list = [s.strip() for s in include.split(",") if s.strip()]
     person = await get_person(
-        db, person_id, current_user.id, include=include_list or None, household_id=household_id
+        db,
+        person_id,
+        current_user.id,
+        include=include_list or None,
+        household_id=household_id,
     )
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
@@ -129,7 +164,9 @@ async def patch(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     household_id = await get_user_household_id(db, current_user.id)
-    person = await update_person(db, person_id, current_user.id, data, household_id=household_id)
+    person = await update_person(
+        db, person_id, current_user.id, data, household_id=household_id
+    )
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
     return person
@@ -143,8 +180,10 @@ async def delete(
 ):
     try:
         person = await soft_delete_person(db, person_id, current_user.id)
-    except ValueError:
-        raise HTTPException(status_code=403, detail="Cannot delete your own person record")
+    except ValueError as err:
+        raise HTTPException(
+            status_code=403, detail="Cannot delete your own person record"
+        ) from err
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
 
@@ -165,7 +204,9 @@ async def create_relationship(
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
     household_id = await get_user_household_id(db, current_user.id)
-    target = await get_person(db, data.to_person_id, current_user.id, household_id=household_id)
+    target = await get_person(
+        db, data.to_person_id, current_user.id, household_id=household_id
+    )
     if not target:
         raise HTTPException(status_code=404, detail="Target person not found")
     return await add_relationship(
@@ -186,7 +227,9 @@ async def list_person_relationships(
     items, total = await list_relationships_for_person(
         db, person_id, current_user.id, skip=pagination.skip, limit=pagination.limit
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.post(

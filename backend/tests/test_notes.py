@@ -96,9 +96,7 @@ def unauthed_client():
 def test_create_note_success(app_client):
     note = make_note()
     with patch("app.api.v1.notes.create_note", new=AsyncMock(return_value=note)):
-        resp = app_client.post(
-            "/api/v1/notes/", json={"title": "Meeting notes"}
-        )
+        resp = app_client.post("/api/v1/notes/", json={"title": "Meeting notes"})
     assert resp.status_code == 201
     body = resp.json()
     assert body["title"] == "Meeting notes"
@@ -287,18 +285,14 @@ def test_get_note_statistics_empty(app_client):
 
 def test_get_note_found(app_client):
     note = make_note()
-    with patch(
-        "app.api.v1.notes.get_note_public", new=AsyncMock(return_value=note)
-    ):
+    with patch("app.api.v1.notes.get_note_public", new=AsyncMock(return_value=note)):
         resp = app_client.get(f"/api/v1/notes/{NOTE_ID}")
     assert resp.status_code == 200
     assert resp.json()["id"] == str(NOTE_ID)
 
 
 def test_get_note_not_found(app_client):
-    with patch(
-        "app.api.v1.notes.get_note_public", new=AsyncMock(return_value=None)
-    ):
+    with patch("app.api.v1.notes.get_note_public", new=AsyncMock(return_value=None)):
         resp = app_client.get(f"/api/v1/notes/{uuid.uuid4()}")
     assert resp.status_code == 404
 
@@ -308,9 +302,7 @@ def test_get_note_not_found(app_client):
 
 def test_patch_note_success(app_client):
     updated = make_note(title="Updated title", pinned=True)
-    with patch(
-        "app.api.v1.notes.update_note", new=AsyncMock(return_value=updated)
-    ):
+    with patch("app.api.v1.notes.update_note", new=AsyncMock(return_value=updated)):
         resp = app_client.patch(
             f"/api/v1/notes/{NOTE_ID}",
             json={"title": "Updated title", "pinned": True},
@@ -321,9 +313,7 @@ def test_patch_note_success(app_client):
 
 
 def test_patch_note_not_found(app_client):
-    with patch(
-        "app.api.v1.notes.update_note", new=AsyncMock(return_value=None)
-    ):
+    with patch("app.api.v1.notes.update_note", new=AsyncMock(return_value=None)):
         resp = app_client.patch(
             f"/api/v1/notes/{uuid.uuid4()}", json={"title": "Ghost"}
         )
@@ -342,8 +332,6 @@ def test_delete_note_success(app_client):
 
 
 def test_delete_note_not_found(app_client):
-    with patch(
-        "app.api.v1.notes.soft_delete_note", new=AsyncMock(return_value=None)
-    ):
+    with patch("app.api.v1.notes.soft_delete_note", new=AsyncMock(return_value=None)):
         resp = app_client.delete(f"/api/v1/notes/{uuid.uuid4()}")
     assert resp.status_code == 404

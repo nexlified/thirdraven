@@ -15,9 +15,7 @@ from app.crud.person import (
 from app.models.user import User
 from app.schemas.person import ChannelCreate, ChannelPublic, ChannelUpdate
 
-router = APIRouter(
-    prefix="/persons/{person_id}/channels", tags=["channels"]
-)
+router = APIRouter(prefix="/persons/{person_id}/channels", tags=["channels"])
 
 
 @router.post("/", response_model=ChannelPublic, status_code=status.HTTP_201_CREATED)
@@ -33,7 +31,9 @@ async def add_channel(
     return await create_channel(db, person_id, current_user.id, data)
 
 
-@router.patch("/{channel_id}", response_model=ChannelPublic, status_code=status.HTTP_200_OK)
+@router.patch(
+    "/{channel_id}", response_model=ChannelPublic, status_code=status.HTTP_200_OK
+)
 async def edit_channel(
     person_id: uuid.UUID,
     channel_id: uuid.UUID,

@@ -27,9 +27,7 @@ from app.schemas.paginated import Paginated
 router = APIRouter(prefix="/communications", tags=["communications"])
 
 
-@router.post(
-    "/ingest", response_model=CommPublic, status_code=status.HTTP_201_CREATED
-)
+@router.post("/ingest", response_model=CommPublic, status_code=status.HTTP_201_CREATED)
 async def ingest(
     data: CommIngest,
     db: Annotated[AsyncSession, Depends(get_session)],
@@ -70,7 +68,9 @@ async def list_all(
         is_bot=is_bot,
         context=context,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{comm_id}", response_model=CommPublic)

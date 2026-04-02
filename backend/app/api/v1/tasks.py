@@ -69,7 +69,9 @@ async def list_all(
         due_after=due_after,
         overdue=overdue,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{task_id}", response_model=TaskPublicRead)

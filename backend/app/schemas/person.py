@@ -66,7 +66,7 @@ class AddressPublic(BaseModel):
 
 
 class ChannelCreate(BaseModel):
-    type: str  # "email" | "mobile" | "phone" | "whatsapp" | "telegram" | "discord" | ...
+    type: str  # "email" | "mobile" | "phone" | "whatsapp" | "telegram" | "discord" | ..
     value: str
     label: str | None = None  # "work" | "personal" | etc.
     is_primary: bool = False

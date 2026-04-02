@@ -49,9 +49,7 @@ async def invite(
     return await invite_member(db, household_id, current_user.id, data.username)
 
 
-@router.delete(
-    "/{household_id}/members/{user_id}", response_model=HouseholdPublic
-)
+@router.delete("/{household_id}/members/{user_id}", response_model=HouseholdPublic)
 async def kick_member(
     household_id: uuid.UUID,
     user_id: uuid.UUID,

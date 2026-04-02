@@ -99,9 +99,7 @@ def unauthed_client():
 def test_create_task_success(app_client):
     task = make_task()
     with patch("app.api.v1.tasks.create_task", new=AsyncMock(return_value=task)):
-        resp = app_client.post(
-            "/api/v1/tasks/", json={"title": "Buy groceries"}
-        )
+        resp = app_client.post("/api/v1/tasks/", json={"title": "Buy groceries"})
     assert resp.status_code == 201
     body = resp.json()
     assert body["title"] == "Buy groceries"
@@ -110,9 +108,7 @@ def test_create_task_success(app_client):
 
 
 def test_create_task_missing_title(app_client):
-    resp = app_client.post(
-        "/api/v1/tasks/", json={"description": "No title here"}
-    )
+    resp = app_client.post("/api/v1/tasks/", json={"description": "No title here"})
     assert resp.status_code == 422
 
 
@@ -306,18 +302,14 @@ def test_list_tasks_overdue_filter_false(app_client):
 
 def test_get_task_found(app_client):
     task = make_task()
-    with patch(
-        "app.api.v1.tasks.get_task_public", new=AsyncMock(return_value=task)
-    ):
+    with patch("app.api.v1.tasks.get_task_public", new=AsyncMock(return_value=task)):
         resp = app_client.get(f"/api/v1/tasks/{TASK_ID}")
     assert resp.status_code == 200
     assert resp.json()["id"] == str(TASK_ID)
 
 
 def test_get_task_not_found(app_client):
-    with patch(
-        "app.api.v1.tasks.get_task_public", new=AsyncMock(return_value=None)
-    ):
+    with patch("app.api.v1.tasks.get_task_public", new=AsyncMock(return_value=None)):
         resp = app_client.get(f"/api/v1/tasks/{uuid.uuid4()}")
     assert resp.status_code == 404
 
@@ -327,9 +319,7 @@ def test_get_task_not_found(app_client):
 
 def test_patch_task_success(app_client):
     updated = make_task(title="Updated task", status="done")
-    with patch(
-        "app.api.v1.tasks.update_task", new=AsyncMock(return_value=updated)
-    ):
+    with patch("app.api.v1.tasks.update_task", new=AsyncMock(return_value=updated)):
         resp = app_client.patch(
             f"/api/v1/tasks/{TASK_ID}",
             json={"title": "Updated task", "status": "done"},
@@ -340,9 +330,7 @@ def test_patch_task_success(app_client):
 
 
 def test_patch_task_not_found(app_client):
-    with patch(
-        "app.api.v1.tasks.update_task", new=AsyncMock(return_value=None)
-    ):
+    with patch("app.api.v1.tasks.update_task", new=AsyncMock(return_value=None)):
         resp = app_client.patch(
             f"/api/v1/tasks/{uuid.uuid4()}", json={"title": "Ghost"}
         )
@@ -361,8 +349,6 @@ def test_delete_task_success(app_client):
 
 
 def test_delete_task_not_found(app_client):
-    with patch(
-        "app.api.v1.tasks.soft_delete_task", new=AsyncMock(return_value=None)
-    ):
+    with patch("app.api.v1.tasks.soft_delete_task", new=AsyncMock(return_value=None)):
         resp = app_client.delete(f"/api/v1/tasks/{uuid.uuid4()}")
     assert resp.status_code == 404

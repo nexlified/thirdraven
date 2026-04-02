@@ -38,9 +38,16 @@ async def list_all(
     status: str | None = None,
 ):
     items, total = await list_assets(
-        db, current_user.id, skip=pagination.skip, limit=pagination.limit, category=category, status=status
+        db,
+        current_user.id,
+        skip=pagination.skip,
+        limit=pagination.limit,
+        category=category,
+        status=status,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{asset_id}", response_model=AssetPublicRead)

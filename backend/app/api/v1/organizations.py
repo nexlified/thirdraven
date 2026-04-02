@@ -57,9 +57,15 @@ async def list_all(
 ):
     household_id = await get_user_household_id(db, current_user.id)
     items, total = await list_orgs(
-        db, current_user.id, skip=pagination.skip, limit=pagination.limit, household_id=household_id
+        db,
+        current_user.id,
+        skip=pagination.skip,
+        limit=pagination.limit,
+        household_id=household_id,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @orgs_router.get("/{org_id}", response_model=OrgPublic)

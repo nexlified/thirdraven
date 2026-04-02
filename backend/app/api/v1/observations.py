@@ -22,9 +22,7 @@ from app.schemas.observation import (
 )
 from app.schemas.paginated import Paginated
 
-router = APIRouter(
-    prefix="/persons/{person_id}/observations", tags=["observations"]
-)
+router = APIRouter(prefix="/persons/{person_id}/observations", tags=["observations"])
 
 
 @router.post("/", response_model=ObservationPublic, status_code=status.HTTP_201_CREATED)
@@ -53,11 +51,17 @@ async def list_all(
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
     items, total = await list_observations(
-        db, person_id, current_user.id,
-        skip=pagination.skip, limit=pagination.limit, include_sensitive=include_sensitive,
+        db,
+        person_id,
+        current_user.id,
+        skip=pagination.skip,
+        limit=pagination.limit,
+        include_sensitive=include_sensitive,
         context=context,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{obs_id}", response_model=ObservationPublic)

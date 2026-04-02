@@ -44,9 +44,7 @@ from app.schemas.vocabulary import TermSlim
 # ── Household visibility helper ────────────────────────────────────────────────
 
 
-def _visibility_clause(
-    owner_id: uuid.UUID, household_id: uuid.UUID | None
-):
+def _visibility_clause(owner_id: uuid.UUID, household_id: uuid.UUID | None):
     """WHERE clause covering owner's own records + household-visible records."""
     if household_id:
         return or_(
@@ -84,10 +82,7 @@ _CONTEXT_FIELDS = {
     "relationship_nature",
 }
 _ALL_EXT_FIELDS = (
-    _PROFILE_FIELDS
-    | _PROFESSIONAL_FIELDS
-    | _LOCATION_FIELDS
-    | _CONTEXT_FIELDS
+    _PROFILE_FIELDS | _PROFESSIONAL_FIELDS | _LOCATION_FIELDS | _CONTEXT_FIELDS
 )
 
 
@@ -357,7 +352,7 @@ async def _build_person_slim(db: AsyncSession, person: Person) -> PersonSlim:
         tags=tags,
         is_placeholder=person.is_placeholder,
         is_bot=person.is_bot,
-        is_self=person.is_self
+        is_self=person.is_self,
     )
 
 
@@ -527,14 +522,16 @@ async def create_person(
         ChannelCreate(**ch) if isinstance(ch, dict) else ch for ch in channels_data
     ]
     for ch in channels:
-        db.add(PersonChannel(
-            person_id=person.id,
-            owner_id=owner_id,
-            type=ch.type,
-            value=ch.value,
-            label=ch.label,
-            is_primary=ch.is_primary,
-        ))
+        db.add(
+            PersonChannel(
+                person_id=person.id,
+                owner_id=owner_id,
+                type=ch.type,
+                value=ch.value,
+                label=ch.label,
+                is_primary=ch.is_primary,
+            )
+        )
 
     # Addresses
     addresses = [
@@ -545,18 +542,20 @@ async def create_person(
         country_id = None
         if addr.country:
             country_id = await resolve_country_alpha2(db, addr.country)
-        db.add(PersonAddress(
-            person_id=person.id,
-            owner_id=owner_id,
-            type=addr.type,
-            street=addr.street,
-            city=addr.city,
-            postal_code=addr.postal_code,
-            country_id=country_id,
-            lat=addr.lat,
-            lng=addr.lng,
-            is_primary=addr.is_primary,
-        ))
+        db.add(
+            PersonAddress(
+                person_id=person.id,
+                owner_id=owner_id,
+                type=addr.type,
+                street=addr.street,
+                city=addr.city,
+                postal_code=addr.postal_code,
+                country_id=country_id,
+                lat=addr.lat,
+                lng=addr.lng,
+                is_primary=addr.is_primary,
+            )
+        )
 
     await db.commit()
     await db.refresh(person)
@@ -610,7 +609,8 @@ async def get_person(
                 select(PersonLocation).where(PersonLocation.person_id == person_id)
             )
             row = r.scalars().first()
-            # Always return location section when requested (addresses may exist even without timezone)
+            # Always return location section when requested.
+            # Addresses may exist even without timezone.
             loc_row = row or PersonLocation(person_id=person_id)
             sections["location"] = await _build_location_section(db, person_id, loc_row)
 
@@ -653,10 +653,9 @@ async def list_persons(
     if is_bot is not None:
         base = base.where(Person.is_bot == is_bot)
     if relationship_nature is not None:
-        base = (
-            base.outerjoin(PersonContext, PersonContext.person_id == Person.id)
-            .where(PersonContext.relationship_nature == relationship_nature)
-        )
+        base = base.outerjoin(
+            PersonContext, PersonContext.person_id == Person.id
+        ).where(PersonContext.relationship_nature == relationship_nature)
     total = (
         await db.execute(select(func.count()).select_from(base.subquery()))
     ).scalar_one()
@@ -748,8 +747,7 @@ async def update_person(
     # Many-per-person replace-all
     if channels_data is not None:
         channels = [
-            ChannelCreate(**ch) if isinstance(ch, dict) else ch
-            for ch in channels_data
+            ChannelCreate(**ch) if isinstance(ch, dict) else ch for ch in channels_data
         ]
         await _set_channels(db, person_id, owner_id, channels)
 
@@ -761,7 +759,9 @@ async def update_person(
         await _set_addresses(db, person_id, owner_id, addresses)
 
     await db.commit()
-    return await get_person(db, person_id, owner_id, include=include, household_id=household_id)
+    return await get_person(
+        db, person_id, owner_id, include=include, household_id=household_id
+    )
 
 
 async def soft_delete_person(
@@ -922,7 +922,9 @@ async def update_address(
 
     country_id = addr.country_id
     if data.country is not None:
-        country_id = await resolve_country_alpha2(db, data.country) if data.country else None
+        country_id = (
+            await resolve_country_alpha2(db, data.country) if data.country else None
+        )
 
     for field in ("type", "street", "city", "postal_code", "lat", "lng", "is_primary"):
         val = getattr(data, field, None)

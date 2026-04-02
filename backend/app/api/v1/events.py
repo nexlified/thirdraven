@@ -27,9 +27,7 @@ from app.schemas.event import (
 from app.schemas.paginated import Paginated
 
 events_router = APIRouter(prefix="/events", tags=["events"])
-event_persons_router = APIRouter(
-    prefix="/events/{event_id}/persons", tags=["events"]
-)
+event_persons_router = APIRouter(prefix="/events/{event_id}/persons", tags=["events"])
 
 
 # ── /events CRUD ───────────────────────────────────────────────────────────────
@@ -52,8 +50,12 @@ async def list_all(
     current_user: Annotated[User, Depends(get_current_user)],
     pagination: Annotated[PaginationParams, Depends(PaginationParams)],
 ):
-    items, total = await list_events(db, current_user.id, skip=pagination.skip, limit=pagination.limit)
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    items, total = await list_events(
+        db, current_user.id, skip=pagination.skip, limit=pagination.limit
+    )
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @events_router.get("/{event_id}", response_model=EventPublic)

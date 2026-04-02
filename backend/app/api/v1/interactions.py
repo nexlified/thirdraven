@@ -53,9 +53,17 @@ async def list_all(
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
     items, total = await list_interactions(
-        db, person_id, current_user.id, skip=pagination.skip, limit=pagination.limit, type_slug=type_slug, context=context
+        db,
+        person_id,
+        current_user.id,
+        skip=pagination.skip,
+        limit=pagination.limit,
+        type_slug=type_slug,
+        context=context,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{interaction_id}", response_model=InteractionPublicRead)

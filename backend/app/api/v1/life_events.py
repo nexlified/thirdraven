@@ -36,9 +36,7 @@ from app.schemas.paginated import Paginated
 
 # ── Standalone life events (owner-scoped) ─────────────────────────────────────
 
-life_events_standalone_router = APIRouter(
-    prefix="/life-events", tags=["life-events"]
-)
+life_events_standalone_router = APIRouter(prefix="/life-events", tags=["life-events"])
 
 
 @life_events_standalone_router.post(
@@ -61,7 +59,9 @@ async def list_events(
     items, total = await list_life_events(
         db, current_user.id, skip=pagination.skip, limit=pagination.limit
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @life_events_standalone_router.get("/{event_id}", response_model=LifeEventPublic)
@@ -180,7 +180,9 @@ async def list_person_events(
     items, total = await list_life_events_for_person(
         db, person_id, current_user.id, skip=pagination.skip, limit=pagination.limit
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 # ── Significant Dates ─────────────────────────────────────────────────────────

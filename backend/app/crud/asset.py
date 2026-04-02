@@ -168,7 +168,9 @@ async def list_assets(
     total = (
         await db.execute(select(func.count()).select_from(base.subquery()))
     ).scalar_one()
-    result = await db.execute(base.order_by(Asset.created_at.desc()).offset(skip).limit(limit))
+    result = await db.execute(
+        base.order_by(Asset.created_at.desc()).offset(skip).limit(limit)
+    )
     assets = result.scalars().all()
     return [await _build_asset_public(db, a) for a in assets], total
 

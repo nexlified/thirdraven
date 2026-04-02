@@ -18,9 +18,7 @@ class PhysicalAsset(SQLModel, table=True):
     # imei|ean|upc|vin|isbn|barcode|other
     identifier_type: str | None = None
     color: str | None = None
-    condition_term_id: uuid.UUID | None = Field(
-        default=None, foreign_key="term.id"
-    )
+    condition_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
     dimensions: str | None = None  # free text, e.g. "30 x 20 x 10 cm"
     weight_grams: float | None = None
     manufactured_year: int | None = None
@@ -33,9 +31,7 @@ class DocumentAsset(SQLModel, table=True):
     asset_id: uuid.UUID = Field(foreign_key="asset.id", unique=True, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    document_type_term_id: uuid.UUID | None = Field(
-        default=None, foreign_key="term.id"
-    )
+    document_type_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
     document_number: str | None = None
     issuer: str | None = None
     issue_date: date | None = None
@@ -53,9 +49,7 @@ class FinancialAsset(SQLModel, table=True):
 
     institution: str | None = None
     account_number: str | None = None
-    account_type_term_id: uuid.UUID | None = Field(
-        default=None, foreign_key="term.id"
-    )
+    account_type_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
     current_balance: float | None = None
     currency: str | None = None  # ISO 4217
     interest_rate: float | None = None  # annual rate as decimal (0.065 = 6.5%)

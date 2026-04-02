@@ -32,10 +32,7 @@ async def list_all_countries(
 
 
 @router.get("/countries/{alpha2}", response_model=CountryPublic)
-async def get_country(
-    alpha2: str,
-    db: Annotated[AsyncSession, Depends(get_session)]
-):
+async def get_country(alpha2: str, db: Annotated[AsyncSession, Depends(get_session)]):
     country = await get_country_by_alpha2(db, alpha2)
     if not country:
         raise HTTPException(status_code=404, detail="Country not found")
@@ -57,8 +54,7 @@ async def list_all_languages(
 
 @router.get("/languages/{iso_639_1}", response_model=LanguagePublic)
 async def get_language(
-    iso_639_1: str,
-    db: Annotated[AsyncSession, Depends(get_session)]
+    iso_639_1: str, db: Annotated[AsyncSession, Depends(get_session)]
 ):
     lang = await get_language_by_code(db, iso_639_1)
     if not lang:
@@ -81,8 +77,7 @@ async def list_all_timezones(
 
 @router.get("/timezones/{timezone_id}", response_model=TimezonePublic)
 async def get_timezone(
-    timezone_id: uuid.UUID,
-    db: Annotated[AsyncSession, Depends(get_session)]
+    timezone_id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_session)]
 ):
     tz = await get_timezone_by_id(db, timezone_id)
     if not tz:

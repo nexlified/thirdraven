@@ -54,7 +54,9 @@ async def list_all(
         subscription_id=subscription_id,
         event_id=event_id,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/statistics", response_model=NoteStatistics)

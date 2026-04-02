@@ -36,7 +36,10 @@ async def get_contact(
 async def list_contacts(
     db: AsyncSession, owner_id: uuid.UUID, skip: int = 0, limit: int = 50
 ) -> tuple[list[Contact], int]:
-    base = select(Contact).where(Contact.owner_id == owner_id, Contact.deleted_at.is_(None))
+    base = select(Contact).where(
+        Contact.owner_id == owner_id,
+        Contact.deleted_at.is_(None),
+    )
     total = (
         await db.execute(select(func.count()).select_from(base.subquery()))
     ).scalar_one()

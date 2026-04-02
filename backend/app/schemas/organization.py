@@ -9,15 +9,15 @@ from app.schemas.vocabulary import TermSlim
 
 class OrgCreate(BaseModel):
     name: str
-    type: str | None = None        # slug from "org-types"
+    type: str | None = None  # slug from "org-types"
     description: str | None = None
     website: str | None = None
     email: str | None = None
     phone: str | None = None
-    industry: str | None = None    # slug from "industries"
+    industry: str | None = None  # slug from "industries"
     founded_year: int | None = None
     headquarters_city: str | None = None
-    country: str | None = None     # ISO alpha2
+    country: str | None = None  # ISO alpha2
     linkedin_url: str | None = None
     notes: str | None = None
     visibility: str = "private"  # "private" | "household"

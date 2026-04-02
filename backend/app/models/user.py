@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import Any, Optional
 
 import sqlalchemy as sa
 from sqlmodel import Field, SQLModel
@@ -25,7 +24,7 @@ class User(SQLModel, table=True):
     # Link to the user's own Person record (set after creation).
     # use_alter defers the FK constraint so the circular person→user→person
     # dependency is resolved at migration time.
-    person_id: Optional[uuid.UUID] = Field(
+    person_id: uuid.UUID | None = Field(
         default=None,
         sa_column=sa.Column(
             sa.Uuid,

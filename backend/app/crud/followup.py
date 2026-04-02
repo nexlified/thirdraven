@@ -63,7 +63,9 @@ async def list_followups(
         await db.execute(select(func.count()).select_from(base.subquery()))
     ).scalar_one()
     r = await db.execute(
-        base.order_by(PersonFollowUp.due_on.asc().nulls_last()).offset(skip).limit(limit)
+        base.order_by(PersonFollowUp.due_on.asc().nulls_last())
+        .offset(skip)
+        .limit(limit)
     )
     return [_build(row) for row in r.scalars().all()], total
 

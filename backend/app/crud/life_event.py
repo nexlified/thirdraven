@@ -49,9 +49,7 @@ async def _build_participants(
     ]
 
 
-async def _build_life_event_public(
-    db: AsyncSession, row: LifeEvent
-) -> LifeEventPublic:
+async def _build_life_event_public(db: AsyncSession, row: LifeEvent) -> LifeEventPublic:
     event_type = await _resolve_term(db, row.event_type_term_id)
     emotion = await _resolve_term(db, row.emotion_term_id)
     participants = await _build_participants(db, row.id)
@@ -113,11 +111,13 @@ async def create_life_event(
     await db.flush()
 
     for p in data.participants:
-        db.add(LifeEventPerson(
-            life_event_id=row.id,
-            person_id=p.person_id,
-            role=p.role,
-        ))
+        db.add(
+            LifeEventPerson(
+                life_event_id=row.id,
+                person_id=p.person_id,
+                role=p.role,
+            )
+        )
 
     await db.commit()
     await db.refresh(row)
@@ -257,11 +257,13 @@ async def add_participant(
     )
     if not event.scalars().first():
         return None
-    db.add(LifeEventPerson(
-        life_event_id=event_id,
-        person_id=person_id,
-        role=role,
-    ))
+    db.add(
+        LifeEventPerson(
+            life_event_id=event_id,
+            person_id=person_id,
+            role=role,
+        )
+    )
     await db.commit()
     return await get_life_event(db, event_id, owner_id)
 
@@ -388,9 +390,11 @@ async def update_significant_date(
     raw = data.model_dump(exclude_unset=True)
     if "date_type" in raw:
         slug = raw.pop("date_type")
-        row.date_type_term_id = await resolve_optional_term_slug(
-            db, "significant-date-types", slug
-        ) if slug else None
+        row.date_type_term_id = (
+            await resolve_optional_term_slug(db, "significant-date-types", slug)
+            if slug
+            else None
+        )
     for field, value in raw.items():
         setattr(row, field, value)
     row.updated_at = datetime.utcnow()

@@ -70,7 +70,9 @@ async def list_all(
         category=category,
         billing_cycle=billing_cycle,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{subscription_id}", response_model=SubscriptionPublicRead)
@@ -144,9 +146,15 @@ async def list_sub_payments(
     if not sub:
         raise HTTPException(status_code=404, detail="Subscription not found")
     items, total = await list_payments(
-        db, subscription_id, current_user.id, skip=pagination.skip, limit=pagination.limit
+        db,
+        subscription_id,
+        current_user.id,
+        skip=pagination.skip,
+        limit=pagination.limit,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.patch(

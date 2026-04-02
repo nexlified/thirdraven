@@ -135,9 +135,7 @@ def test_create_vocabulary_success(app_client):
 
 def test_create_vocabulary_missing_required(app_client):
     # Missing machine_name
-    resp = app_client.post(
-        "/api/v1/vocabularies/", json={"name": "Asset Categories"}
-    )
+    resp = app_client.post("/api/v1/vocabularies/", json={"name": "Asset Categories"})
     assert resp.status_code == 422
 
 
@@ -245,18 +243,14 @@ def test_list_vocabulary_terms_returns_list(app_client):
         make_term(),
         make_term(id=uuid.uuid4(), name="Software", slug="software"),
     ]
-    with patch(
-        "app.api.v1.vocabularies.list_terms", new=AsyncMock(return_value=terms)
-    ):
+    with patch("app.api.v1.vocabularies.list_terms", new=AsyncMock(return_value=terms)):
         resp = app_client.get("/api/v1/vocabularies/asset-categories/terms")
     assert resp.status_code == 200
     assert len(resp.json()) == 2
 
 
 def test_list_vocabulary_terms_empty(app_client):
-    with patch(
-        "app.api.v1.vocabularies.list_terms", new=AsyncMock(return_value=[])
-    ):
+    with patch("app.api.v1.vocabularies.list_terms", new=AsyncMock(return_value=[])):
         resp = app_client.get("/api/v1/vocabularies/asset-categories/terms")
     assert resp.status_code == 200
     assert resp.json() == []
@@ -266,9 +260,7 @@ def test_list_vocabulary_terms_search_filter(app_client):
     with patch(
         "app.api.v1.vocabularies.list_terms", new=AsyncMock(return_value=[])
     ) as mock_list:
-        resp = app_client.get(
-            "/api/v1/vocabularies/asset-categories/terms?search=hard"
-        )
+        resp = app_client.get("/api/v1/vocabularies/asset-categories/terms?search=hard")
     assert resp.status_code == 200
     call_kwargs = mock_list.call_args.kwargs
     assert call_kwargs["search"] == "hard"
@@ -279,9 +271,7 @@ def test_list_vocabulary_terms_search_filter(app_client):
 
 def test_create_vocabulary_term_success(app_client):
     term = make_term()
-    with patch(
-        "app.api.v1.vocabularies.create_term", new=AsyncMock(return_value=term)
-    ):
+    with patch("app.api.v1.vocabularies.create_term", new=AsyncMock(return_value=term)):
         resp = app_client.post(
             "/api/v1/vocabularies/asset-categories/terms",
             json={"name": "Hardware", "slug": "hardware"},
@@ -319,9 +309,7 @@ def test_get_vocabulary_term_not_found(app_client):
         "app.api.v1.vocabularies.get_term_by_slug",
         new=AsyncMock(return_value=None),
     ):
-        resp = app_client.get(
-            "/api/v1/vocabularies/asset-categories/terms/nonexistent"
-        )
+        resp = app_client.get("/api/v1/vocabularies/asset-categories/terms/nonexistent")
     assert resp.status_code == 404
 
 
@@ -342,9 +330,7 @@ def test_patch_vocabulary_term_success(app_client):
 
 
 def test_patch_vocabulary_term_not_found(app_client):
-    with patch(
-        "app.api.v1.vocabularies.update_term", new=AsyncMock(return_value=None)
-    ):
+    with patch("app.api.v1.vocabularies.update_term", new=AsyncMock(return_value=None)):
         resp = app_client.patch(
             "/api/v1/vocabularies/asset-categories/terms/nonexistent",
             json={"name": "Ghost"},
@@ -356,12 +342,8 @@ def test_patch_vocabulary_term_not_found(app_client):
 
 
 def test_delete_vocabulary_term_success(app_client):
-    with patch(
-        "app.api.v1.vocabularies.delete_term", new=AsyncMock(return_value=True)
-    ):
-        resp = app_client.delete(
-            "/api/v1/vocabularies/asset-categories/terms/hardware"
-        )
+    with patch("app.api.v1.vocabularies.delete_term", new=AsyncMock(return_value=True)):
+        resp = app_client.delete("/api/v1/vocabularies/asset-categories/terms/hardware")
     assert resp.status_code == 204
 
 

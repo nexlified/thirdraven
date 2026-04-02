@@ -10,10 +10,10 @@ class PersonSignificantDate(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", index=True)
 
-    date_type_term_id: uuid.UUID | None = Field(
-        default=None, foreign_key="term.id"
+    date_type_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
+    label: str | None = (
+        None  # free-text override; at least one of date_type or label must be set
     )
-    label: str | None = None  # free-text override; at least one of date_type or label must be set
     month: int
     day: int
     year: int | None = None

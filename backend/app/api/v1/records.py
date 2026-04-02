@@ -50,7 +50,9 @@ async def list_all(
         person_id=person_id,
         expires_before=expires_before,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{record_id}", response_model=RecordPublic)

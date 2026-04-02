@@ -45,7 +45,9 @@ async def list_all(
         entity_type=entity_type,
         entity_id=entity_id,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{doc_id}", response_model=DocumentPublic)

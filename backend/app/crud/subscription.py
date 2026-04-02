@@ -328,7 +328,9 @@ async def list_payments(
     result = await db.execute(
         base.order_by(BillPayment.billing_date.desc()).offset(skip).limit(limit)
     )
-    return [BillPaymentPublicRead.model_validate(p) for p in result.scalars().all()], total
+    return [
+        BillPaymentPublicRead.model_validate(p) for p in result.scalars().all()
+    ], total
 
 
 async def get_payment(

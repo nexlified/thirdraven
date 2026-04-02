@@ -15,9 +15,7 @@ from app.crud.person import (
 from app.models.user import User
 from app.schemas.person import AddressCreate, AddressPublic
 
-router = APIRouter(
-    prefix="/persons/{person_id}/addresses", tags=["addresses"]
-)
+router = APIRouter(prefix="/persons/{person_id}/addresses", tags=["addresses"])
 
 
 @router.post("/", response_model=AddressPublic, status_code=status.HTTP_201_CREATED)
@@ -33,7 +31,9 @@ async def add_address(
     return await create_address(db, person_id, current_user.id, data)
 
 
-@router.patch("/{address_id}", response_model=AddressPublic, status_code=status.HTTP_200_OK)
+@router.patch(
+    "/{address_id}", response_model=AddressPublic, status_code=status.HTTP_200_OK
+)
 async def edit_address(
     person_id: uuid.UUID,
     address_id: uuid.UUID,

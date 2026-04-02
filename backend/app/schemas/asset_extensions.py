@@ -14,7 +14,9 @@ class PhysicalAssetCreate(BaseModel):
     model_number: str | None = None
     serial_number: str | None = None
     identifier_value: str | None = None
-    identifier_type: str | None = None  # "imei"|"ean"|"upc"|"vin"|"isbn"|"barcode"|"other"
+    identifier_type: str | None = (
+        None  # "imei"|"ean"|"upc"|"vin"|"isbn"|"barcode"|"other"
+    )
     color: str | None = None
     condition: str | None = None  # slug from "asset-conditions" vocabulary
     dimensions: str | None = None

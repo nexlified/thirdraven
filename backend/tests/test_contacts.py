@@ -103,9 +103,7 @@ def test_create_contact_success(app_client):
     with patch(
         "app.api.v1.contacts.create_contact", new=AsyncMock(return_value=contact)
     ):
-        resp = app_client.post(
-            "/api/v1/contacts/", json={"first_name": "Alice"}
-        )
+        resp = app_client.post("/api/v1/contacts/", json={"first_name": "Alice"})
     assert resp.status_code == 201
     body = resp.json()
     assert body["first_name"] == "Alice"
@@ -118,9 +116,7 @@ def test_create_contact_missing_first_name(app_client):
 
 
 def test_create_contact_unauthenticated(unauthed_client):
-    resp = unauthed_client.post(
-        "/api/v1/contacts/", json={"first_name": "Alice"}
-    )
+    resp = unauthed_client.post("/api/v1/contacts/", json={"first_name": "Alice"})
     assert resp.status_code in (401, 422, 500)
 
 
@@ -193,9 +189,7 @@ def test_list_contacts_pagination_params(app_client):
 def test_get_contact_found(app_client):
     contact = make_contact()
     with (
-        patch(
-            "app.api.v1.contacts.get_contact", new=AsyncMock(return_value=contact)
-        ),
+        patch("app.api.v1.contacts.get_contact", new=AsyncMock(return_value=contact)),
         patch(
             "app.api.v1.contacts.get_relationships_for_contact",
             new=AsyncMock(return_value=[]),
@@ -212,9 +206,7 @@ def test_get_contact_with_relationships(app_client):
     contact = make_contact()
     rel = make_relationship()
     with (
-        patch(
-            "app.api.v1.contacts.get_contact", new=AsyncMock(return_value=contact)
-        ),
+        patch("app.api.v1.contacts.get_contact", new=AsyncMock(return_value=contact)),
         patch(
             "app.api.v1.contacts.get_relationships_for_contact",
             new=AsyncMock(return_value=[rel]),
@@ -251,9 +243,7 @@ def test_patch_contact_success(app_client):
 
 
 def test_patch_contact_not_found(app_client):
-    with patch(
-        "app.api.v1.contacts.update_contact", new=AsyncMock(return_value=None)
-    ):
+    with patch("app.api.v1.contacts.update_contact", new=AsyncMock(return_value=None)):
         resp = app_client.patch(
             f"/api/v1/contacts/{uuid.uuid4()}", json={"first_name": "Ghost"}
         )

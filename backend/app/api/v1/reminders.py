@@ -46,9 +46,15 @@ async def list_all(
     is_done: bool | None = None,
 ):
     items, total = await list_reminders(
-        db, current_user.id, skip=pagination.skip, limit=pagination.limit, is_done=is_done
+        db,
+        current_user.id,
+        skip=pagination.skip,
+        limit=pagination.limit,
+        is_done=is_done,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{reminder_id}", response_model=ReminderPublic)
@@ -98,9 +104,15 @@ async def list_person_reminders(
     pagination: Annotated[PaginationParams, Depends(PaginationParams)],
 ):
     items, total = await list_reminders(
-        db, current_user.id, skip=pagination.skip, limit=pagination.limit, person_id=person_id
+        db,
+        current_user.id,
+        skip=pagination.skip,
+        limit=pagination.limit,
+        person_id=person_id,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @asset_reminders_router.get("/", response_model=Paginated[ReminderPublic])
@@ -111,9 +123,15 @@ async def list_asset_reminders(
     pagination: Annotated[PaginationParams, Depends(PaginationParams)],
 ):
     items, total = await list_reminders(
-        db, current_user.id, skip=pagination.skip, limit=pagination.limit, asset_id=asset_id
+        db,
+        current_user.id,
+        skip=pagination.skip,
+        limit=pagination.limit,
+        asset_id=asset_id,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @subscription_reminders_router.get("/", response_model=Paginated[ReminderPublic])
@@ -124,6 +142,12 @@ async def list_subscription_reminders(
     pagination: Annotated[PaginationParams, Depends(PaginationParams)],
 ):
     items, total = await list_reminders(
-        db, current_user.id, skip=pagination.skip, limit=pagination.limit, subscription_id=sub_id
+        db,
+        current_user.id,
+        skip=pagination.skip,
+        limit=pagination.limit,
+        subscription_id=sub_id,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )

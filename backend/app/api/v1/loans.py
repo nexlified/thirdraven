@@ -18,9 +18,7 @@ from app.schemas.loan import LoanCreate, LoanPublic, LoanUpdate
 from app.schemas.paginated import Paginated
 
 router = APIRouter(prefix="/loans", tags=["loans"])
-person_loans_router = APIRouter(
-    prefix="/persons/{person_id}/loans", tags=["loans"]
-)
+person_loans_router = APIRouter(prefix="/persons/{person_id}/loans", tags=["loans"])
 
 
 @router.post("/", response_model=LoanPublic, status_code=status.HTTP_201_CREATED)
@@ -48,7 +46,9 @@ async def list_all(
         status=status_filter,
         direction=direction,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
 
 
 @router.get("/{loan_id}", response_model=LoanPublic)
@@ -104,4 +104,6 @@ async def list_person_loans(
         limit=pagination.limit,
         person_id=person_id,
     )
-    return Paginated(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )

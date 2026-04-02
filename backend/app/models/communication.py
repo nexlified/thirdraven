@@ -38,9 +38,7 @@ class Communication(SQLModel, table=True):
 
     # Resolved links
     person_id: uuid.UUID | None = Field(default=None, foreign_key="person.id")
-    interaction_id: uuid.UUID | None = Field(
-        default=None, foreign_key="interaction.id"
-    )
+    interaction_id: uuid.UUID | None = Field(default=None, foreign_key="interaction.id")
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

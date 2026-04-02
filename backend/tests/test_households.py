@@ -141,9 +141,7 @@ def test_remove_member_success(app_client):
     with patch(
         "app.api.v1.households.remove_member", new=AsyncMock(return_value=FAKE_HH)
     ):
-        resp = app_client.delete(
-            f"/api/v1/households/{HH_ID}/members/{MEMBER_ID}"
-        )
+        resp = app_client.delete(f"/api/v1/households/{HH_ID}/members/{MEMBER_ID}")
     assert resp.status_code == 200
     assert len(resp.json()["members"]) == 1
 

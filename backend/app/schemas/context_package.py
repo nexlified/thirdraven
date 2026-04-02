@@ -17,7 +17,7 @@ class RelationshipHealthEntry(BaseModel):
     contact_frequency_days: int | None
     days_since_contact: int | None
     days_overdue: int | None  # negative = still within window
-    health_status: str       # "on-track" | "due-soon" | "overdue" | "no-data"
+    health_status: str  # "on-track" | "due-soon" | "overdue" | "no-data"
 
 
 class ContextPackage(BaseModel):

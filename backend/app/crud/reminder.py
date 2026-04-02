@@ -70,9 +70,7 @@ async def list_reminders(
     total = (
         await db.execute(select(func.count()).select_from(base.subquery()))
     ).scalar_one()
-    r = await db.execute(
-        base.order_by(Reminder.due_at.asc()).offset(skip).limit(limit)
-    )
+    r = await db.execute(base.order_by(Reminder.due_at.asc()).offset(skip).limit(limit))
     rows = r.scalars().all()
     return [ReminderPublic.model_validate(row) for row in rows], total
 

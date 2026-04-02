@@ -22,9 +22,7 @@ class Reminder(SQLModel, table=True):
     person_id: uuid.UUID | None = Field(
         default=None, foreign_key="person.id", index=True
     )
-    asset_id: uuid.UUID | None = Field(
-        default=None, foreign_key="asset.id", index=True
-    )
+    asset_id: uuid.UUID | None = Field(default=None, foreign_key="asset.id", index=True)
     subscription_id: uuid.UUID | None = Field(
         default=None, foreign_key="subscription.id", index=True
     )

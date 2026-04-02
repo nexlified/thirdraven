@@ -77,7 +77,9 @@ async def get_physical_asset(
 
 
 async def upsert_physical_asset(
-    db: AsyncSession, asset_id: uuid.UUID, data: PhysicalAssetCreate | PhysicalAssetUpdate
+    db: AsyncSession,
+    asset_id: uuid.UUID,
+    data: PhysicalAssetCreate | PhysicalAssetUpdate,
 ) -> PhysicalAssetPublic:
     r = await db.execute(
         select(PhysicalAsset).where(PhysicalAsset.asset_id == asset_id)
@@ -96,11 +98,15 @@ async def upsert_physical_asset(
     if row:
         for field, value in raw.items():
             setattr(row, field, value)
-        if condition_term_id is not None or "condition" in data.model_dump(exclude_unset=True):
+        if condition_term_id is not None or "condition" in data.model_dump(
+            exclude_unset=True
+        ):
             row.condition_term_id = condition_term_id
         row.updated_at = datetime.utcnow()
     else:
-        row = PhysicalAsset(asset_id=asset_id, condition_term_id=condition_term_id, **raw)
+        row = PhysicalAsset(
+            asset_id=asset_id, condition_term_id=condition_term_id, **raw
+        )
     db.add(row)
     await db.commit()
     await db.refresh(row)
@@ -159,7 +165,9 @@ async def get_document_asset(
 
 
 async def upsert_document_asset(
-    db: AsyncSession, asset_id: uuid.UUID, data: DocumentAssetCreate | DocumentAssetUpdate
+    db: AsyncSession,
+    asset_id: uuid.UUID,
+    data: DocumentAssetCreate | DocumentAssetUpdate,
 ) -> DocumentAssetPublic:
     r = await db.execute(
         select(DocumentAsset).where(DocumentAsset.asset_id == asset_id)
@@ -248,7 +256,9 @@ async def get_financial_asset(
 
 
 async def upsert_financial_asset(
-    db: AsyncSession, asset_id: uuid.UUID, data: FinancialAssetCreate | FinancialAssetUpdate
+    db: AsyncSession,
+    asset_id: uuid.UUID,
+    data: FinancialAssetCreate | FinancialAssetUpdate,
 ) -> FinancialAssetPublic:
     r = await db.execute(
         select(FinancialAsset).where(FinancialAsset.asset_id == asset_id)
@@ -298,9 +308,7 @@ async def delete_financial_asset(db: AsyncSession, asset_id: uuid.UUID) -> bool:
 async def get_digital_asset(
     db: AsyncSession, asset_id: uuid.UUID
 ) -> DigitalAssetPublic | None:
-    r = await db.execute(
-        select(DigitalAsset).where(DigitalAsset.asset_id == asset_id)
-    )
+    r = await db.execute(select(DigitalAsset).where(DigitalAsset.asset_id == asset_id))
     row = r.scalars().first()
     if not row:
         return None
@@ -310,9 +318,7 @@ async def get_digital_asset(
 async def upsert_digital_asset(
     db: AsyncSession, asset_id: uuid.UUID, data: DigitalAssetCreate | DigitalAssetUpdate
 ) -> DigitalAssetPublic:
-    r = await db.execute(
-        select(DigitalAsset).where(DigitalAsset.asset_id == asset_id)
-    )
+    r = await db.execute(select(DigitalAsset).where(DigitalAsset.asset_id == asset_id))
     row = r.scalars().first()
 
     raw = data.model_dump(exclude_unset=True)
@@ -330,9 +336,7 @@ async def upsert_digital_asset(
 
 
 async def delete_digital_asset(db: AsyncSession, asset_id: uuid.UUID) -> bool:
-    r = await db.execute(
-        select(DigitalAsset).where(DigitalAsset.asset_id == asset_id)
-    )
+    r = await db.execute(select(DigitalAsset).where(DigitalAsset.asset_id == asset_id))
     row = r.scalars().first()
     if not row:
         return False

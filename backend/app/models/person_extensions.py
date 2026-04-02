@@ -68,8 +68,8 @@ class PersonChannel(SQLModel, table=True):
     person_id: uuid.UUID = Field(foreign_key="person.id", index=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id")
     type: str  # "email" | "mobile" | "phone" | "whatsapp" | "telegram" |
-               # "discord" | "twitter" | "instagram" | "github" |
-               # "facebook" | "linkedin" | "website" | ...
+    # "discord" | "twitter" | "instagram" | "github" |
+    # "facebook" | "linkedin" | "website" | ...
     value: str
     label: str | None = None  # "work" | "personal" | etc.
     is_primary: bool = Field(default=False)
@@ -93,4 +93,3 @@ class PersonAddress(SQLModel, table=True):
     lng: float | None = None
     is_primary: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-

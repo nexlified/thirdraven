@@ -5,7 +5,8 @@ from pydantic import BaseModel
 
 
 class AssetEventCreate(BaseModel):
-    event_type: str  # "acquired"|"repaired"|"upgraded"|"valued"|"insured"|"lent"|"returned"|"sold"|"lost"|"disposed"|"other"
+    event_type: str  # acquired|repaired|upgraded|valued|insured|lent
+    # returned|sold|lost|disposed|other
     occurred_on: date | None = None
     description: str | None = None
     cost: float | None = None

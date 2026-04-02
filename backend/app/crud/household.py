@@ -48,9 +48,7 @@ async def _build_household_public(
     db: AsyncSession, household: Household
 ) -> HouseholdPublic:
     r = await db.execute(
-        select(HouseholdMember).where(
-            HouseholdMember.household_id == household.id
-        )
+        select(HouseholdMember).where(HouseholdMember.household_id == household.id)
     )
     members_raw = r.scalars().all()
     members = [await _build_member_public(db, m) for m in members_raw]

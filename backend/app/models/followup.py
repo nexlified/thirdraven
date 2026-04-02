@@ -13,9 +13,7 @@ class PersonFollowUp(SQLModel, table=True):
 
     body: str
     due_on: date | None = None
-    interaction_id: uuid.UUID | None = Field(
-        default=None, foreign_key="interaction.id"
-    )
+    interaction_id: uuid.UUID | None = Field(default=None, foreign_key="interaction.id")
     cleared_at: datetime | None = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

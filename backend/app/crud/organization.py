@@ -24,9 +24,7 @@ from app.schemas.organization import (
 from app.schemas.vocabulary import TermSlim
 
 
-def _org_visibility_clause(
-    owner_id: uuid.UUID, household_id: uuid.UUID | None
-):
+def _org_visibility_clause(owner_id: uuid.UUID, household_id: uuid.UUID | None):
     """WHERE clause covering owner's own orgs + household-visible orgs."""
     if household_id:
         return or_(
@@ -110,9 +108,7 @@ async def _build_org_slim(db: AsyncSession, row: Organization) -> OrgSlim:
 async def _build_person_org_public(
     db: AsyncSession, row: PersonOrganization
 ) -> PersonOrgPublic:
-    r = await db.execute(
-        select(Organization).where(Organization.id == row.org_id)
-    )
+    r = await db.execute(select(Organization).where(Organization.id == row.org_id))
     org_row = r.scalars().first()
     org_slim = await _build_org_slim(db, org_row) if org_row else None
 
