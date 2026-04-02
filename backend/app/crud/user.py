@@ -1,8 +1,7 @@
+import secrets
 import uuid
 from datetime import datetime, timedelta
 from typing import Any
-
-import secrets
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select

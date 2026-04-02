@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
 import sqlalchemy as sa
 from sqlmodel import Field, SQLModel
@@ -19,7 +20,9 @@ class User(SQLModel, table=True):
         sa_column=sa.Column(sa.JSON, nullable=True),
     )
     reset_password_token_hash: str | None = Field(default=None, nullable=True)
-    reset_password_token_expires_at: datetime | None = Field(default=None, nullable=True)
+    reset_password_token_expires_at: datetime | None = Field(
+        default=None, nullable=True
+    )
 
     # Link to the user's own Person record (set after creation).
     # use_alter defers the FK constraint so the circular person→user→person

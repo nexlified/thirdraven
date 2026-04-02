@@ -106,7 +106,9 @@ async def reset_password(
     db: Annotated[AsyncSession, Depends(get_session)],
 ):
     if len(data.new_password) < 8:
-        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+        raise HTTPException(
+            status_code=400, detail="Password must be at least 8 characters"
+        )
     ok = await reset_password_with_token(db, data.reset_token, data.new_password)
     if not ok:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
