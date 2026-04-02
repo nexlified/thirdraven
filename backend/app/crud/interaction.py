@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -79,7 +79,7 @@ async def update_interaction(
         return None
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(interaction, field, value)
-    interaction.updated_at = datetime.utcnow()
+    interaction.updated_at = datetime.now(UTC)
     db.add(interaction)
     await db.commit()
     await db.refresh(interaction)

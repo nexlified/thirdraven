@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -88,10 +88,10 @@ async def update_goal(
     for field, value in raw.items():
         setattr(row, field, value)
     if achieved is True and row.achieved_at is None:
-        row.achieved_at = datetime.utcnow()
+        row.achieved_at = datetime.now(UTC)
     elif achieved is False:
         row.achieved_at = None
-    row.updated_at = datetime.utcnow()
+    row.updated_at = datetime.now(UTC)
     db.add(row)
     await db.commit()
     await db.refresh(row)

@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from sqlmodel import Field, SQLModel
 
@@ -16,8 +16,8 @@ class PersonObservation(SQLModel, table=True):
     source: str | None = None  # "conversation" | "social-media" | "email" | etc.
     context: str | None = None  # "personal" | "professional" | "mixed"
     is_sensitive: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class PersonObservationTag(SQLModel, table=True):

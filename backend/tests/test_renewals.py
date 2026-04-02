@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -20,7 +20,7 @@ FAKE_USER = User(
     email="test@example.com",
     hashed_password="hashed",
     is_active=True,
-    created_at=datetime.utcnow(),
+    created_at=datetime.now(UTC),
 )
 
 

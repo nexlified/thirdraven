@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -146,7 +146,7 @@ async def update_record(
     db_fields = await _resolve_fields(db, data.model_dump(exclude_unset=True))
     for field, value in db_fields.items():
         setattr(row, field, value)
-    row.updated_at = datetime.utcnow()
+    row.updated_at = datetime.now(UTC)
     db.add(row)
     await db.commit()
     await db.refresh(row)
@@ -166,7 +166,7 @@ async def delete_record(
     row = r.scalars().first()
     if not row:
         return False
-    row.deleted_at = datetime.utcnow()
+    row.deleted_at = datetime.now(UTC)
     db.add(row)
     await db.commit()
     return True

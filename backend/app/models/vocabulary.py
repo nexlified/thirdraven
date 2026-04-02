@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import JSON, Column, UniqueConstraint
@@ -19,7 +19,7 @@ class Vocabulary(SQLModel, table=True):
     source_type: str = Field(default="internal")
     external_provider: str | None = None
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class Term(SQLModel, table=True):
@@ -39,7 +39,7 @@ class Term(SQLModel, table=True):
     )
     reverse_slug: str | None = None
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class PersonTag(SQLModel, table=True):

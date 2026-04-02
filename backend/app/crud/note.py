@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -152,7 +152,7 @@ async def update_note(
 
     for field, value in raw.items():
         setattr(note, field, value)
-    note.updated_at = datetime.utcnow()
+    note.updated_at = datetime.now(UTC)
     db.add(note)
 
     if tag_slugs is not None:
@@ -169,7 +169,7 @@ async def soft_delete_note(
     note = await get_note(db, note_id, owner_id)
     if not note:
         return None
-    note.deleted_at = datetime.utcnow()
+    note.deleted_at = datetime.now(UTC)
     db.add(note)
     await db.commit()
     return note

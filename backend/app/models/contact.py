@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import ARRAY, Column, String
 from sqlmodel import Field, SQLModel
@@ -16,6 +16,6 @@ class Contact(SQLModel, table=True):
     phone: str | None = None
     notes: str | None = None
     tags: list[str] = Field(default_factory=list, sa_column=Column(ARRAY(String)))
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     deleted_at: datetime | None = None

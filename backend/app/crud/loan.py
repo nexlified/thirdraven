@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -93,7 +93,7 @@ async def update_loan(
 
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(row, field, value)
-    row.updated_at = datetime.utcnow()
+    row.updated_at = datetime.now(UTC)
     db.add(row)
     await db.commit()
     await db.refresh(row)
@@ -113,7 +113,7 @@ async def soft_delete_loan(
     row = r.scalars().first()
     if not row:
         return False
-    row.deleted_at = datetime.utcnow()
+    row.deleted_at = datetime.now(UTC)
     db.add(row)
     await db.commit()
     return True

@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -24,7 +24,7 @@ FAKE_USER = User(
     email="test@example.com",
     hashed_password="hashed",
     is_active=True,
-    created_at=datetime.utcnow(),
+    created_at=datetime.now(UTC),
 )
 
 
@@ -61,8 +61,8 @@ def make_person(**kwargs) -> Person:
         closeness_level=None,
         notes=None,
         tags=[],
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         deleted_at=None,
     )
     defaults.update(kwargs)
@@ -80,8 +80,8 @@ def make_interaction(**kwargs) -> Interaction:
         context=None,
         notes=None,
         metadata_=None,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     defaults.update(kwargs)
     return Interaction(**defaults)

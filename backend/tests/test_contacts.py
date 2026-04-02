@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -23,7 +23,7 @@ FAKE_USER = User(
     email="test@example.com",
     hashed_password="hashed",
     is_active=True,
-    created_at=datetime.utcnow(),
+    created_at=datetime.now(UTC),
 )
 
 
@@ -37,8 +37,8 @@ def make_contact(**kwargs) -> ContactPublicRead:
         phone=None,
         notes=None,
         tags=[],
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     defaults.update(kwargs)
     return ContactPublicRead(**defaults)
@@ -50,7 +50,7 @@ def make_relationship(**kwargs) -> ContactRelationship:
         from_contact_id=CONTACT_ID,
         to_contact_id=OTHER_ID,
         label="friend",
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
     )
     defaults.update(kwargs)
     return ContactRelationship(**defaults)

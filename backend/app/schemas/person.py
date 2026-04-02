@@ -184,7 +184,7 @@ class PersonSlim(BaseModel):
     household_id: uuid.UUID | None
     is_placeholder: bool
     is_bot: bool
-    is_self: bool
+    is_self: bool = False
     created_at: datetime
     updated_at: datetime
 

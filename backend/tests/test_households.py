@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -22,7 +22,7 @@ FAKE_USER = User(
     email="alice@example.com",
     hashed_password="hashed",
     is_active=True,
-    created_at=datetime.utcnow(),
+    created_at=datetime.now(UTC),
 )
 
 FAKE_ADMIN_MEMBER = HouseholdMemberPublic(
@@ -30,7 +30,7 @@ FAKE_ADMIN_MEMBER = HouseholdMemberPublic(
     user_id=OWNER_ID,
     username="alice",
     role="admin",
-    joined_at=datetime.utcnow(),
+    joined_at=datetime.now(UTC),
 )
 
 FAKE_HH = HouseholdPublic(
@@ -38,7 +38,7 @@ FAKE_HH = HouseholdPublic(
     name="Smith Family",
     created_by=OWNER_ID,
     members=[FAKE_ADMIN_MEMBER],
-    created_at=datetime.utcnow(),
+    created_at=datetime.now(UTC),
 )
 
 
@@ -113,14 +113,14 @@ def test_invite_member_success(app_client):
         user_id=MEMBER_ID,
         username="bob",
         role="member",
-        joined_at=datetime.utcnow(),
+        joined_at=datetime.now(UTC),
     )
     hh_with_two = HouseholdPublic(
         id=HH_ID,
         name="Smith Family",
         created_by=OWNER_ID,
         members=[FAKE_ADMIN_MEMBER, second_member],
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
     )
     with patch(
         "app.api.v1.households.invite_member",
@@ -178,8 +178,8 @@ def test_person_slim_household_fields():
         household_id=HH_ID,
         is_placeholder=False,
         is_bot=False,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     assert shared.visibility == "household"
     assert shared.household_id == HH_ID
@@ -203,8 +203,8 @@ def test_person_slim_private_defaults():
         household_id=None,
         is_placeholder=False,
         is_bot=False,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     assert private.visibility == "private"
     assert private.household_id is None
@@ -233,8 +233,8 @@ def test_org_public_household_fields():
         notes=None,
         visibility="household",
         household_id=HH_ID,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     assert org.visibility == "household"
     assert org.household_id == HH_ID

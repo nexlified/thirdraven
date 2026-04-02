@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -24,7 +24,7 @@ FAKE_USER = User(
     email="test@example.com",
     hashed_password="hashed",
     is_active=True,
-    created_at=datetime.utcnow(),
+    created_at=datetime.now(UTC),
 )
 
 HARDWARE_TERM = TermSlim(id=CAT_TERM_ID, name="Hardware", slug="hardware")
@@ -50,8 +50,8 @@ def make_asset_public(**kwargs) -> AssetPublicRead:
         image_url=None,
         purchase_url=None,
         notes=None,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     defaults.update(kwargs)
     return AssetPublicRead(**defaults)

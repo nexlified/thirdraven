@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -199,7 +199,7 @@ async def update_asset(
 
     for field, value in raw.items():
         setattr(asset, field, value)
-    asset.updated_at = datetime.utcnow()
+    asset.updated_at = datetime.now(UTC)
     db.add(asset)
 
     if tags_slugs is not None:
@@ -216,7 +216,7 @@ async def soft_delete_asset(
     asset = await get_asset(db, asset_id, owner_id)
     if not asset:
         return None
-    asset.deleted_at = datetime.utcnow()
+    asset.deleted_at = datetime.now(UTC)
     db.add(asset)
     await db.commit()
     return asset

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -140,7 +140,7 @@ async def update_observation(
     tags_slugs = raw.pop("tags", None)
     for field, value in raw.items():
         setattr(row, field, value)
-    row.updated_at = datetime.utcnow()
+    row.updated_at = datetime.now(UTC)
     db.add(row)
     if tags_slugs is not None:
         await _set_tags(db, row.id, tags_slugs)

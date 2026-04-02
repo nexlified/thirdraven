@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Column
 from sqlmodel import Field, SQLModel
@@ -40,5 +40,5 @@ class Communication(SQLModel, table=True):
     person_id: uuid.UUID | None = Field(default=None, foreign_key="person.id")
     interaction_id: uuid.UUID | None = Field(default=None, foreign_key="interaction.id")
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

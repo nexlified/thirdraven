@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -26,7 +26,7 @@ FAKE_USER = User(
     email="test@example.com",
     hashed_password="hashed",
     is_active=True,
-    created_at=datetime.utcnow(),
+    created_at=datetime.now(UTC),
 )
 
 WORK_TERM = TermSlim(id=TAG_TERM_ID, name="Work", slug="work")
@@ -47,8 +47,8 @@ def make_task(**kwargs) -> TaskPublicRead:
         subscription_id=None,
         event_id=None,
         tags=[],
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     defaults.update(kwargs)
     return TaskPublicRead(**defaults)

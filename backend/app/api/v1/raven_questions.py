@@ -1,7 +1,7 @@
 """Raven question (human-in-the-loop) endpoints."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
@@ -76,7 +76,7 @@ async def answer_question(
 
     q.answer = body.answer
     q.status = "answered"
-    q.answered_at = datetime.utcnow()
+    q.answered_at = datetime.now(UTC)
     db.add(q)
     await db.commit()
 

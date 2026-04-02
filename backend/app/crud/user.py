@@ -1,6 +1,6 @@
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,7 +72,7 @@ async def create_password_reset_token(db: AsyncSession, email: str) -> str | Non
 
     raw_token = secrets.token_urlsafe(32)
     user.reset_password_token_hash = hash_password(raw_token)
-    user.reset_password_token_expires_at = datetime.utcnow() + timedelta(hours=1)
+    user.reset_password_token_expires_at = datetime.now(UTC) + timedelta(hours=1)
     db.add(user)
     await db.commit()
     return raw_token
@@ -83,7 +83,7 @@ async def reset_password_with_token(
     reset_token: str,
     new_password: str,
 ) -> bool:
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     result = await db.execute(
         select(User).where(
             User.reset_password_token_hash.is_not(None),

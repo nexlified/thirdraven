@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -24,7 +24,7 @@ FAKE_USER = User(
     email="test@example.com",
     hashed_password="hashed",
     is_active=True,
-    created_at=datetime.utcnow(),
+    created_at=datetime.now(UTC),
 )
 
 PASSPORT_DOC_TERM = TermSlim(id=TERM_ID, name="Passport Scan", slug="passport-scan")
@@ -45,8 +45,8 @@ def make_document(**kwargs) -> DocumentPublic:
         issued_on=None,
         expires_on=None,
         notes=None,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     defaults.update(kwargs)
     return DocumentPublic(**defaults)

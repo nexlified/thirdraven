@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import HTTPException
 from sqlalchemy import func
@@ -244,7 +244,7 @@ async def update_org(
     db_fields = await _resolve_org_fields(db, raw)
     for field, value in db_fields.items():
         setattr(row, field, value)
-    row.updated_at = datetime.utcnow()
+    row.updated_at = datetime.now(UTC)
     db.add(row)
     await db.commit()
     await db.refresh(row)
@@ -264,7 +264,7 @@ async def soft_delete_org(
     row = r.scalars().first()
     if not row:
         return False
-    row.deleted_at = datetime.utcnow()
+    row.deleted_at = datetime.now(UTC)
     db.add(row)
     await db.commit()
     return True
@@ -321,7 +321,7 @@ async def update_person_org(
         return None
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(row, field, value)
-    row.updated_at = datetime.utcnow()
+    row.updated_at = datetime.now(UTC)
     db.add(row)
     await db.commit()
     await db.refresh(row)

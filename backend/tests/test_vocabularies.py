@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -22,7 +22,7 @@ FAKE_USER = User(
     email="test@example.com",
     hashed_password="hashed",
     is_active=True,
-    created_at=datetime.utcnow(),
+    created_at=datetime.now(UTC),
 )
 
 
@@ -38,7 +38,7 @@ def make_vocabulary(**kwargs) -> VocabularyPublic:
         source_type="internal",
         external_provider=None,
         is_active=True,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
     )
     defaults.update(kwargs)
     return VocabularyPublic(**defaults)
@@ -55,7 +55,7 @@ def make_term(**kwargs) -> TermPublic:
         weight=0,
         external_id=None,
         is_active=True,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
     )
     defaults.update(kwargs)
     return TermPublic(**defaults)

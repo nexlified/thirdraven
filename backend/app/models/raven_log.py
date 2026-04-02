@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlmodel import Field, SQLModel
 
@@ -16,4 +16,4 @@ class RavenLog(SQLModel, table=True):
     decision: str  # created|merged|flagged|skipped|needs_clarification
     reasoning: str | None = None
     target_id: uuid.UUID | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

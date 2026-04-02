@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -31,7 +31,7 @@ FAKE_USER = User(
     email="test@example.com",
     hashed_password="hashed",
     is_active=True,
-    created_at=datetime.utcnow(),
+    created_at=datetime.now(UTC),
 )
 
 
@@ -52,8 +52,8 @@ def make_person(**kwargs) -> PersonSlim:
         household_id=None,
         is_placeholder=False,
         is_bot=False,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     defaults.update(kwargs)
     return PersonSlim(**defaults)
@@ -229,7 +229,7 @@ def test_get_person_with_relationships(app_client):
         ),
         label=TermSlim(id=TERM_ID, name="Colleague", slug="colleague"),
         inverse_id=None,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
     )
     with (
         patch("app.api.v1.persons.get_person", new=AsyncMock(return_value=person)),
@@ -304,7 +304,7 @@ def test_delete_person_success(app_client):
         id=PERSON_ID,
         owner_id=OWNER_ID,
         first_name="Alice",
-        deleted_at=datetime.utcnow(),
+        deleted_at=datetime.now(UTC),
     )
     with patch(
         "app.api.v1.persons.soft_delete_person", new=AsyncMock(return_value=person)
@@ -337,7 +337,7 @@ def test_create_relationship_success(app_client):
         ),
         label=TermSlim(id=TERM_ID, name="Colleague", slug="colleague"),
         inverse_id=None,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
     )
     with (
         patch(

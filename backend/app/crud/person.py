@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import HTTPException
 from sqlalchemy import func
@@ -713,7 +713,7 @@ async def update_person(
     # Update core fields
     for field, value in core.items():
         setattr(person, field, value)
-    person.updated_at = datetime.utcnow()
+    person.updated_at = datetime.now(UTC)
     db.add(person)
 
     # Update extension rows (with resolver)
@@ -732,7 +732,7 @@ async def update_person(
             if ext_row:
                 for field, value in ext_db.items():
                     setattr(ext_row, field, value)
-                ext_row.updated_at = datetime.utcnow()
+                ext_row.updated_at = datetime.now(UTC)
                 db.add(ext_row)
             else:
                 db.add(ext_cls(person_id=person_id, **ext_db))
@@ -779,7 +779,7 @@ async def soft_delete_person(
         return None
     if person.is_self:
         raise ValueError("cannot_delete_self")
-    person.deleted_at = datetime.utcnow()
+    person.deleted_at = datetime.now(UTC)
     db.add(person)
     await db.commit()
     return person

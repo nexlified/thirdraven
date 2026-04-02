@@ -1,6 +1,6 @@
 import uuid
 from collections import defaultdict
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -213,7 +213,7 @@ async def update_subscription(
 
     for field, value in raw.items():
         setattr(sub, field, value)
-    sub.updated_at = datetime.utcnow()
+    sub.updated_at = datetime.now(UTC)
     db.add(sub)
 
     if tag_slugs is not None:
@@ -230,7 +230,7 @@ async def soft_delete_subscription(
     sub = await get_subscription(db, subscription_id, owner_id)
     if not sub:
         return None
-    sub.deleted_at = datetime.utcnow()
+    sub.deleted_at = datetime.now(UTC)
     db.add(sub)
     await db.commit()
     return sub

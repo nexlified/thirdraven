@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from sqlmodel import Field, SQLModel
 
@@ -9,7 +9,7 @@ class PersonProfile(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     middle_name: str | None = None
     prefix_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
@@ -25,7 +25,7 @@ class PersonProfessional(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     occupation_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
     company: str | None = None
@@ -37,7 +37,7 @@ class PersonLocation(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     timezone_id: uuid.UUID | None = Field(default=None, foreign_key="timezone.id")
 
@@ -47,7 +47,7 @@ class PersonContext(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     how_we_met: str | None = None
     first_met_on: date | None = None
@@ -73,7 +73,7 @@ class PersonChannel(SQLModel, table=True):
     value: str
     label: str | None = None  # "work" | "personal" | etc.
     is_primary: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class PersonAddress(SQLModel, table=True):
@@ -92,4 +92,4 @@ class PersonAddress(SQLModel, table=True):
     lat: float | None = None
     lng: float | None = None
     is_primary: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

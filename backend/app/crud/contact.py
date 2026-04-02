@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -60,7 +60,7 @@ async def update_contact(
         return None
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(contact, field, value)
-    contact.updated_at = datetime.utcnow()
+    contact.updated_at = datetime.now(UTC)
     db.add(contact)
     await db.commit()
     await db.refresh(contact)
@@ -73,7 +73,7 @@ async def soft_delete_contact(
     contact = await get_contact(db, contact_id, owner_id)
     if not contact:
         return None
-    contact.deleted_at = datetime.utcnow()
+    contact.deleted_at = datetime.now(UTC)
     db.add(contact)
     await db.commit()
     return contact

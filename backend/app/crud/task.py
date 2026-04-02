@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -178,13 +178,13 @@ async def update_task(
 
     new_status = raw.get("status")
     if new_status == "done" and task.status != "done":
-        task.completed_at = datetime.utcnow()
+        task.completed_at = datetime.now(UTC)
     elif new_status is not None and new_status != "done" and task.status == "done":
         task.completed_at = None
 
     for field, value in raw.items():
         setattr(task, field, value)
-    task.updated_at = datetime.utcnow()
+    task.updated_at = datetime.now(UTC)
     db.add(task)
 
     if tag_slugs is not None:
@@ -201,7 +201,7 @@ async def soft_delete_task(
     task = await get_task(db, task_id, owner_id)
     if not task:
         return None
-    task.deleted_at = datetime.utcnow()
+    task.deleted_at = datetime.now(UTC)
     db.add(task)
     await db.commit()
     return task

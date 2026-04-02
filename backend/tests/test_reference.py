@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -26,7 +26,7 @@ FAKE_USER = User(
     email="test@example.com",
     hashed_password="hashed",
     is_active=True,
-    created_at=datetime.utcnow(),
+    created_at=datetime.now(UTC),
 )
 
 
@@ -36,7 +36,7 @@ def make_person_term(**kwargs) -> PersonTerm:
         person_id=PERSON_ID,
         term_id=TERM_ID,
         context=None,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
     )
     defaults.update(kwargs)
     return PersonTerm(**defaults)

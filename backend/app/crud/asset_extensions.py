@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -102,7 +102,7 @@ async def upsert_physical_asset(
             exclude_unset=True
         ):
             row.condition_term_id = condition_term_id
-        row.updated_at = datetime.utcnow()
+        row.updated_at = datetime.now(UTC)
     else:
         row = PhysicalAsset(
             asset_id=asset_id, condition_term_id=condition_term_id, **raw
@@ -195,7 +195,7 @@ async def upsert_document_asset(
             row.document_type_term_id = document_type_term_id
         if "country" in data.model_dump(exclude_unset=True):
             row.country_id = country_id
-        row.updated_at = datetime.utcnow()
+        row.updated_at = datetime.now(UTC)
     else:
         row = DocumentAsset(
             asset_id=asset_id,
@@ -279,7 +279,7 @@ async def upsert_financial_asset(
             setattr(row, field, value)
         if "account_type" in data.model_dump(exclude_unset=True):
             row.account_type_term_id = account_type_term_id
-        row.updated_at = datetime.utcnow()
+        row.updated_at = datetime.now(UTC)
     else:
         row = FinancialAsset(
             asset_id=asset_id, account_type_term_id=account_type_term_id, **raw
@@ -326,7 +326,7 @@ async def upsert_digital_asset(
     if row:
         for field, value in raw.items():
             setattr(row, field, value)
-        row.updated_at = datetime.utcnow()
+        row.updated_at = datetime.now(UTC)
     else:
         row = DigitalAsset(asset_id=asset_id, **raw)
     db.add(row)

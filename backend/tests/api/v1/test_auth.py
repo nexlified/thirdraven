@@ -34,6 +34,7 @@ def test_register_success(
             "username": "alice",
             "email": "alice@example.com",
             "password": "secret123",
+            "first_name": "Alice",
         },
     )
 
@@ -66,6 +67,7 @@ def test_register_duplicate_username_returns_400(
             "username": "alice",
             "email": "alice@example.com",
             "password": "secret123",
+            "first_name": "Alice",
         },
     )
 
@@ -83,6 +85,7 @@ def test_register_invalid_email_returns_422(client: TestClient) -> None:
             "username": "alice",
             "email": "not-an-email",
             "password": "secret123",
+            "first_name": "Alice",
         },
     )
 

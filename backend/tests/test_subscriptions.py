@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -30,7 +30,7 @@ FAKE_USER = User(
     email="test@example.com",
     hashed_password="hashed",
     is_active=True,
-    created_at=datetime.utcnow(),
+    created_at=datetime.now(UTC),
 )
 
 STREAMING_TERM = TermSlim(id=CAT_TERM_ID, name="Streaming", slug="streaming")
@@ -58,8 +58,8 @@ def make_subscription(**kwargs) -> SubscriptionPublicRead:
         notes=None,
         asset_id=None,
         tags=[],
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     defaults.update(kwargs)
     return SubscriptionPublicRead(**defaults)
@@ -81,7 +81,7 @@ def make_payment(**kwargs) -> BillPaymentPublicRead:
         paid_on=date(2026, 3, 1),
         status="paid",
         notes=None,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
     )
     defaults.update(kwargs)
     return BillPaymentPublicRead(**defaults)

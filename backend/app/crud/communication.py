@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -91,7 +91,7 @@ async def _update_last_contacted(
     if ctx:
         if ctx.last_contacted_on is None or contacted_date > ctx.last_contacted_on:
             ctx.last_contacted_on = contacted_date
-            ctx.updated_at = datetime.utcnow()
+            ctx.updated_at = datetime.now(UTC)
             db.add(ctx)
     else:
         db.add(PersonContext(person_id=person_id, last_contacted_on=contacted_date))
@@ -143,7 +143,7 @@ async def _auto_process(
         row.person_id = person.id
         row.interaction_id = interaction.id
         row.status = "matched"
-        row.processed_at = datetime.utcnow()
+        row.processed_at = datetime.now(UTC)
         await _update_last_contacted(db, person.id, row.communicated_at)
         return
 
@@ -179,7 +179,7 @@ async def _auto_process(
         row.person_id = placeholder.id
         row.interaction_id = interaction.id
         row.status = "placeholder"
-        row.processed_at = datetime.utcnow()
+        row.processed_at = datetime.now(UTC)
         await _update_last_contacted(db, placeholder.id, row.communicated_at)
         return
 
@@ -298,7 +298,7 @@ async def update_communication(
         return None
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(row, field, value)
-    row.updated_at = datetime.utcnow()
+    row.updated_at = datetime.now(UTC)
     db.add(row)
     await db.commit()
     await db.refresh(row)
@@ -364,7 +364,7 @@ async def match_communication(
         await db.flush()
         row.interaction_id = interaction.id
         row.status = "matched"
-        row.processed_at = datetime.utcnow()
+        row.processed_at = datetime.now(UTC)
         await _update_last_contacted(db, row.person_id, row.communicated_at)
     else:
         await _auto_process(db, row, owner_id)
