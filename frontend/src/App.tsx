@@ -13,6 +13,11 @@ import { ResetPassword } from "./pages/ResetPassword";
 import { Organizations } from "./pages/Organizations";
 import { Vocabularies } from "./pages/Vocabularies";
 import { Settings } from "./pages/Settings";
+import { Assets } from "./pages/Assets";
+import { Notes } from "./pages/Notes";
+import { Subscriptions } from "./pages/Subscriptions";
+import { Loans } from "./pages/Loans";
+import { Reminders } from "./pages/Reminders";
 
 export default function App() {
   return (
@@ -76,6 +81,46 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Organizations />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notes"
+            element={
+              <ProtectedRoute>
+                <Notes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/subscriptions"
+            element={
+              <ProtectedRoute>
+                <Subscriptions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/loans"
+            element={
+              <ProtectedRoute>
+                <Loans />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reminders"
+            element={
+              <ProtectedRoute>
+                <Reminders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assets"
+            element={
+              <ProtectedRoute>
+                <Assets />
               </ProtectedRoute>
             }
           />

@@ -8,7 +8,10 @@ const NAV_ITEMS = [
   { label: "Events", icon: "◷", path: "/events" },
   { label: "Tasks", icon: "◫", path: "/tasks" },
   { label: "Notes", icon: "○", path: "/notes" },
-  { label: "Assets", icon: "◉", path: "/assets" },
+  { label: "Subscriptions", icon: "◉", path: "/subscriptions" },
+  { label: "Loans", icon: "◎", path: "/loans" },
+  { label: "Reminders", icon: "◷", path: "/reminders" },
+  { label: "Assets", icon: "◈", path: "/assets" },
   { label: "Vocabulary", icon: "◧", path: "/vocabulary" },
   { label: "Settings", icon: "⚙", path: "/settings" },
 ];

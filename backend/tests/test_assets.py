@@ -1,6 +1,6 @@
 import uuid
 from datetime import UTC, date, datetime
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import FastAPI
@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from app.api.v1.assets import router as assets_router
 from app.core.database import get_session
 from app.core.deps import get_current_user
+from app.models.asset import Asset
 from app.models.user import User
 from app.schemas.asset import AssetPublicRead
 from app.schemas.vocabulary import TermSlim
@@ -111,6 +112,45 @@ def test_create_asset_success(app_client):
     assert body["name"] == "MacBook Pro"
     assert body["category"]["slug"] == "hardware"
     assert body["status"]["slug"] == "active"
+
+
+@pytest.mark.asyncio
+async def test_create_asset_builds_naive_timestamps():
+    db = Mock()
+    db.flush = AsyncMock()
+    db.commit = AsyncMock()
+    db.refresh = AsyncMock()
+    db.add = Mock()
+
+    created = make_asset_public()
+    with (
+        patch("app.crud.asset.resolve_term_slug", new=AsyncMock(return_value=CAT_TERM_ID)),
+        patch("app.crud.asset._build_asset_public", new=AsyncMock(return_value=created)),
+    ):
+        from app.crud.asset import create_asset
+        from app.schemas.asset import AssetCreate
+
+        await create_asset(
+            db,
+            OWNER_ID,
+            AssetCreate(name="MacBook Pro", category="hardware"),
+        )
+
+    asset = db.add.call_args.args[0]
+    assert asset.created_at.tzinfo is None
+    assert asset.updated_at.tzinfo is None
+
+
+def test_asset_default_timestamps_are_naive():
+    asset = Asset(
+        owner_id=OWNER_ID,
+        name="MacBook Pro",
+        category_term_id=CAT_TERM_ID,
+        status_term_id=STATUS_TERM_ID,
+    )
+
+    assert asset.created_at.tzinfo is None
+    assert asset.updated_at.tzinfo is None
 
 
 def test_create_asset_missing_required_fields(app_client):
