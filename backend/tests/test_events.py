@@ -33,8 +33,21 @@ MEETING_TERM = TermSlim(id=TYPE_TERM_ID, name="Meeting", slug="meeting")
 
 FAKE_PERSON_SLIM = PersonSlim(
     id=PERSON_ID,
+    owner_id=OWNER_ID,
     first_name="Alice",
     last_name="Smith",
+    nickname=None,
+    email=None,
+    phone=None,
+    notes=None,
+    tags=[],
+    closeness_level=None,
+    visibility="private",
+    household_id=None,
+    is_placeholder=False,
+    is_bot=False,
+    created_at=datetime.now(UTC),
+    updated_at=datetime.now(UTC),
 )
 
 
