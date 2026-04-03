@@ -38,28 +38,51 @@ Follow these rules for all backend, frontend, and migration changes.
 ## Testing and Validation Rules
 - Backend API tests mock at router import boundary using `AsyncMock` + `patch`.
 - Use `app.dependency_overrides` in router tests; avoid real DB for router-level tests.
-- Frontend changes must pass TypeScript build and lint before merge.
+- Frontend unit tests use **Vitest** + `@testing-library/react`; config is in `frontend/vite.config.ts` (import `defineConfig` from `'vitest/config'`, not `'vite'`).
+- Frontend API client tests live at `frontend/src/api/*.test.ts`; use `vi.mock('./client')` and `vi.mocked(api.get).mockResolvedValue(...)`.
+- Frontend changes must pass TypeScript build (`npm run build`) and lint (`npm run lint`) before merge.
 - When adding major user flows, add or update Playwright coverage in `frontend/e2e/`.
+
+## Environment Notes (Read Before Running Any Command)
+
+`uv` is **not on the system PATH**. It lives inside the virtualenv at `backend/.venv/bin/uv`.
+- Never run bare `uv`, `pytest`, `alembic`, or `ruff` — they will not be found.
+- Always prefix backend commands with `backend/.venv/bin/uv run <cmd>` (from the repo root) or `../.venv/bin/uv run <cmd>` (from inside `backend/`).
+- The system `python`/`python3` binaries cannot import app modules — they are not in the venv.
+- Do **not** activate the venv manually; just use the full path prefix.
 
 ## Standard Commands
 ```bash
-# repo root
+# repo root — orchestration (these work as-is via Makefile)
 make install
 make db-up
 make test
 make lint
 make format
 
-# backend
-cd backend
-uv sync --group dev
-alembic upgrade head
-uv run pytest
+# backend — run from repo root using full uv path
+backend/.venv/bin/uv run pytest                          # run all tests
+backend/.venv/bin/uv run pytest tests/test_persons.py    # run single test file
+backend/.venv/bin/uv run ruff check . --fix              # lint
+backend/.venv/bin/uv run ruff format .                   # format
+backend/.venv/bin/uv run alembic upgrade head            # apply migrations
+backend/.venv/bin/uv run alembic revision --autogenerate -m "message"
 
-# frontend
-cd frontend
-npm run lint
-npm run build
+# backend — if already inside backend/ directory
+../.venv/bin/uv run pytest
+../.venv/bin/uv run ruff check . --fix
+../.venv/bin/uv run alembic upgrade head
+
+# frontend — unit tests (Vitest)
+cd frontend && npm run test:unit          # run once
+cd frontend && npm run test:unit:watch    # watch mode
+
+# frontend — E2E tests (Playwright)
+cd frontend && npm test
+
+# frontend — build / lint
+cd frontend && npm run lint
+cd frontend && npm run build
 ```
 
 ## Definition of Done
