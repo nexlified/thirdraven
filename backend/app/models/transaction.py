@@ -21,9 +21,13 @@ class Transaction(SQLModel, table=True):
     transacted_on: date
     description: str
     category_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
-    payment_method_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
+    payment_method_term_id: uuid.UUID | None = Field(
+        default=None, foreign_key="term.id"
+    )
     asset_id: uuid.UUID | None = Field(default=None, foreign_key="asset.id")
-    subscription_id: uuid.UUID | None = Field(default=None, foreign_key="subscription.id")
+    subscription_id: uuid.UUID | None = Field(
+        default=None, foreign_key="subscription.id"
+    )
     merchant: str | None = None
     reference: str | None = None  # card last-4, UPI ref, cheque number
     tags: list[Any] | None = Field(default=None, sa_column=Column(JSON))
