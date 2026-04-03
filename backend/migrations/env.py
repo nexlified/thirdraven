@@ -37,6 +37,7 @@ import app.models.relationship  # noqa: F401
 import app.models.reminder  # noqa: F401
 import app.models.subscription  # noqa: F401
 import app.models.task  # noqa: F401
+import app.models.transaction  # noqa: F401
 import app.models.tracked_record  # noqa: F401
 import app.models.user  # noqa: F401
 import app.models.vocabulary  # noqa: F401
