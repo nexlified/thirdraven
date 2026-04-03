@@ -6,7 +6,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api.v1.loans import person_loans_router, router as loans_router
+from app.api.v1.loans import person_loans_router
+from app.api.v1.loans import router as loans_router
 from app.core.database import get_session
 from app.core.deps import get_current_user
 from app.models.user import User
@@ -115,7 +116,9 @@ def test_create_money_loan_success(app_client):
 
 
 def test_create_item_loan_success(app_client):
-    loan = make_loan(loan_type="item", amount=None, currency=None, item_name="Canon EOS R5")
+    loan = make_loan(
+        loan_type="item", amount=None, currency=None, item_name="Canon EOS R5"
+    )
     with patch("app.api.v1.loans.create_loan", new=AsyncMock(return_value=loan)):
         resp = app_client.post(
             "/api/v1/loans/",
@@ -246,7 +249,9 @@ def test_patch_loan_partial_update(app_client):
 
 
 def test_delete_loan_success(app_client):
-    with patch("app.api.v1.loans.soft_delete_loan", new=AsyncMock(return_value=object())):
+    with patch(
+        "app.api.v1.loans.soft_delete_loan", new=AsyncMock(return_value=object())
+    ):
         resp = app_client.delete(f"/api/v1/loans/{LOAN_ID}")
     assert resp.status_code == 204
 

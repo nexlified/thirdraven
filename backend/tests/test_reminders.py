@@ -9,8 +9,10 @@ from fastapi.testclient import TestClient
 from app.api.v1.reminders import (
     asset_reminders_router,
     person_reminders_router,
-    router as reminders_router,
     subscription_reminders_router,
+)
+from app.api.v1.reminders import (
+    router as reminders_router,
 )
 from app.core.database import get_session
 from app.core.deps import get_current_user
@@ -103,7 +105,9 @@ def unauthed_client():
 
 def test_create_reminder_success(app_client):
     reminder = make_reminder()
-    with patch("app.api.v1.reminders.create_reminder", new=AsyncMock(return_value=reminder)):
+    with patch(
+        "app.api.v1.reminders.create_reminder", new=AsyncMock(return_value=reminder)
+    ):
         resp = app_client.post(
             "/api/v1/reminders/",
             json={"title": "Call dentist", "due_at": "2025-06-01T09:00:00"},
@@ -120,15 +124,15 @@ def test_create_reminder_missing_due_at(app_client):
 
 
 def test_create_reminder_missing_title(app_client):
-    resp = app_client.post(
-        "/api/v1/reminders/", json={"due_at": "2025-06-01T09:00:00"}
-    )
+    resp = app_client.post("/api/v1/reminders/", json={"due_at": "2025-06-01T09:00:00"})
     assert resp.status_code == 422
 
 
 def test_create_reminder_with_recurrence(app_client):
     reminder = make_reminder(recurrence="weekly")
-    with patch("app.api.v1.reminders.create_reminder", new=AsyncMock(return_value=reminder)):
+    with patch(
+        "app.api.v1.reminders.create_reminder", new=AsyncMock(return_value=reminder)
+    ):
         resp = app_client.post(
             "/api/v1/reminders/",
             json={
@@ -154,7 +158,10 @@ def test_create_reminder_unauthenticated(unauthed_client):
 
 def test_list_reminders_returns_list(app_client):
     reminders = [make_reminder(), make_reminder(id=uuid.uuid4(), title="Buy groceries")]
-    with patch("app.api.v1.reminders.list_reminders", new=AsyncMock(return_value=(reminders, 2))):
+    with patch(
+        "app.api.v1.reminders.list_reminders",
+        new=AsyncMock(return_value=(reminders, 2)),
+    ):
         resp = app_client.get("/api/v1/reminders/")
     assert resp.status_code == 200
     data = resp.json()
@@ -163,7 +170,9 @@ def test_list_reminders_returns_list(app_client):
 
 
 def test_list_reminders_empty(app_client):
-    with patch("app.api.v1.reminders.list_reminders", new=AsyncMock(return_value=([], 0))):
+    with patch(
+        "app.api.v1.reminders.list_reminders", new=AsyncMock(return_value=([], 0))
+    ):
         resp = app_client.get("/api/v1/reminders/")
     assert resp.status_code == 200
     assert resp.json()["total"] == 0
@@ -182,7 +191,7 @@ def test_list_reminders_is_done_filter_true(app_client):
     done = make_reminder(is_done=True, done_at=datetime.now(UTC))
     with patch(
         "app.api.v1.reminders.list_reminders", new=AsyncMock(return_value=([done], 1))
-    ) as mock_list:
+    ) as _mock_list:
         resp = app_client.get("/api/v1/reminders/?is_done=true")
     assert resp.status_code == 200
     assert resp.json()["total"] == 1
@@ -193,7 +202,9 @@ def test_list_reminders_is_done_filter_true(app_client):
 
 def test_get_reminder_found(app_client):
     reminder = make_reminder()
-    with patch("app.api.v1.reminders.get_reminder", new=AsyncMock(return_value=reminder)):
+    with patch(
+        "app.api.v1.reminders.get_reminder", new=AsyncMock(return_value=reminder)
+    ):
         resp = app_client.get(f"/api/v1/reminders/{REMINDER_ID}")
     assert resp.status_code == 200
     assert resp.json()["id"] == str(REMINDER_ID)
@@ -211,7 +222,8 @@ def test_get_reminder_not_found(app_client):
 def test_patch_reminder_mark_done(app_client):
     done_reminder = make_reminder(is_done=True, done_at=datetime.now(UTC))
     with patch(
-        "app.api.v1.reminders.update_reminder", new=AsyncMock(return_value=done_reminder)
+        "app.api.v1.reminders.update_reminder",
+        new=AsyncMock(return_value=done_reminder),
     ):
         resp = app_client.patch(
             f"/api/v1/reminders/{REMINDER_ID}", json={"is_done": True}
@@ -221,7 +233,9 @@ def test_patch_reminder_mark_done(app_client):
 
 
 def test_patch_reminder_not_found(app_client):
-    with patch("app.api.v1.reminders.update_reminder", new=AsyncMock(return_value=None)):
+    with patch(
+        "app.api.v1.reminders.update_reminder", new=AsyncMock(return_value=None)
+    ):
         resp = app_client.patch(
             f"/api/v1/reminders/{uuid.uuid4()}", json={"title": "Ghost"}
         )
@@ -233,7 +247,8 @@ def test_patch_reminder_not_found(app_client):
 
 def test_delete_reminder_success(app_client):
     with patch(
-        "app.api.v1.reminders.soft_delete_reminder", new=AsyncMock(return_value=object())
+        "app.api.v1.reminders.soft_delete_reminder",
+        new=AsyncMock(return_value=object()),
     ):
         resp = app_client.delete(f"/api/v1/reminders/{REMINDER_ID}")
     assert resp.status_code == 204
@@ -253,7 +268,8 @@ def test_delete_reminder_not_found(app_client):
 def test_list_person_reminders(app_client):
     reminders = [make_reminder(person_id=PERSON_ID)]
     with patch(
-        "app.api.v1.reminders.list_reminders", new=AsyncMock(return_value=(reminders, 1))
+        "app.api.v1.reminders.list_reminders",
+        new=AsyncMock(return_value=(reminders, 1)),
     ) as mock_list:
         resp = app_client.get(f"/api/v1/persons/{PERSON_ID}/reminders/")
     assert resp.status_code == 200
@@ -265,7 +281,8 @@ def test_list_person_reminders(app_client):
 def test_list_asset_reminders(app_client):
     reminders = [make_reminder(asset_id=ASSET_ID)]
     with patch(
-        "app.api.v1.reminders.list_reminders", new=AsyncMock(return_value=(reminders, 1))
+        "app.api.v1.reminders.list_reminders",
+        new=AsyncMock(return_value=(reminders, 1)),
     ) as mock_list:
         resp = app_client.get(f"/api/v1/assets/{ASSET_ID}/reminders/")
     assert resp.status_code == 200
@@ -276,7 +293,8 @@ def test_list_asset_reminders(app_client):
 def test_list_subscription_reminders(app_client):
     reminders = [make_reminder(subscription_id=SUB_ID)]
     with patch(
-        "app.api.v1.reminders.list_reminders", new=AsyncMock(return_value=(reminders, 1))
+        "app.api.v1.reminders.list_reminders",
+        new=AsyncMock(return_value=(reminders, 1)),
     ) as mock_list:
         resp = app_client.get(f"/api/v1/subscriptions/{SUB_ID}/reminders/")
     assert resp.status_code == 200

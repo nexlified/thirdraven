@@ -124,8 +124,12 @@ async def test_create_asset_builds_naive_timestamps():
 
     created = make_asset_public()
     with (
-        patch("app.crud.asset.resolve_term_slug", new=AsyncMock(return_value=CAT_TERM_ID)),
-        patch("app.crud.asset._build_asset_public", new=AsyncMock(return_value=created)),
+        patch(
+            "app.crud.asset.resolve_term_slug", new=AsyncMock(return_value=CAT_TERM_ID)
+        ),
+        patch(
+            "app.crud.asset._build_asset_public", new=AsyncMock(return_value=created)
+        ),
     ):
         from app.crud.asset import create_asset
         from app.schemas.asset import AssetCreate

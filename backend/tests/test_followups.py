@@ -128,7 +128,9 @@ def test_list_followups_returns_list(app_client):
     fus = [make_followup(), make_followup(id=uuid.uuid4(), body="Schedule call")]
     with (
         patch("app.api.v1.followups.get_person", new=AsyncMock(return_value=object())),
-        patch("app.api.v1.followups.list_followups", new=AsyncMock(return_value=(fus, 2))),
+        patch(
+            "app.api.v1.followups.list_followups", new=AsyncMock(return_value=(fus, 2))
+        ),
     ):
         resp = app_client.get(f"/api/v1/persons/{PERSON_ID}/follow-ups/")
     assert resp.status_code == 200
@@ -168,9 +170,7 @@ def test_get_followup_found(app_client):
 
 def test_get_followup_not_found(app_client):
     with patch("app.api.v1.followups.get_followup", new=AsyncMock(return_value=None)):
-        resp = app_client.get(
-            f"/api/v1/persons/{PERSON_ID}/follow-ups/{uuid.uuid4()}"
-        )
+        resp = app_client.get(f"/api/v1/persons/{PERSON_ID}/follow-ups/{uuid.uuid4()}")
     assert resp.status_code == 404
 
 
@@ -186,7 +186,9 @@ def test_get_followup_wrong_person(app_client):
 
 def test_patch_followup_success(app_client):
     updated = make_followup(body="Send updated proposal")
-    with patch("app.api.v1.followups.update_followup", new=AsyncMock(return_value=updated)):
+    with patch(
+        "app.api.v1.followups.update_followup", new=AsyncMock(return_value=updated)
+    ):
         resp = app_client.patch(
             f"/api/v1/persons/{PERSON_ID}/follow-ups/{FOLLOWUP_ID}",
             json={"body": "Send updated proposal"},
@@ -209,7 +211,9 @@ def test_patch_followup_mark_cleared(app_client):
 
 
 def test_patch_followup_not_found(app_client):
-    with patch("app.api.v1.followups.update_followup", new=AsyncMock(return_value=None)):
+    with patch(
+        "app.api.v1.followups.update_followup", new=AsyncMock(return_value=None)
+    ):
         resp = app_client.patch(
             f"/api/v1/persons/{PERSON_ID}/follow-ups/{uuid.uuid4()}",
             json={"body": "Ghost"},

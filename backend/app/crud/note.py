@@ -113,9 +113,7 @@ async def list_notes(
 
     if q is not None:
         pattern = f"%{q}%"
-        base = base.where(
-            or_(Note.title.ilike(pattern), Note.body.ilike(pattern))
-        )
+        base = base.where(or_(Note.title.ilike(pattern), Note.body.ilike(pattern)))
     if pinned is not None:
         base = base.where(Note.pinned == pinned)
     if person_id is not None:
@@ -175,9 +173,7 @@ async def soft_delete_note(
     return note
 
 
-async def get_note_statistics(
-    db: AsyncSession, owner_id: uuid.UUID
-) -> NoteStatistics:
+async def get_note_statistics(db: AsyncSession, owner_id: uuid.UUID) -> NoteStatistics:
     result = await db.execute(
         select(Note).where(Note.owner_id == owner_id, Note.deleted_at.is_(None))
     )

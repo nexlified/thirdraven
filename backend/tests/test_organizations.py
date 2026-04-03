@@ -123,7 +123,10 @@ def unauthed_client():
 def test_create_org_success(app_client):
     org = make_org()
     with (
-        patch("app.api.v1.organizations.get_user_household_id", new=AsyncMock(return_value=None)),
+        patch(
+            "app.api.v1.organizations.get_user_household_id",
+            new=AsyncMock(return_value=None),
+        ),
         patch("app.api.v1.organizations.create_org", new=AsyncMock(return_value=org)),
     ):
         resp = app_client.post("/api/v1/organizations/", json={"name": "Acme Corp"})
@@ -139,7 +142,10 @@ def test_create_org_missing_name(app_client):
 def test_create_org_with_all_fields(app_client):
     org = make_org(founded_year=2010, website="https://acme.com")
     with (
-        patch("app.api.v1.organizations.get_user_household_id", new=AsyncMock(return_value=HOUSEHOLD_ID)),
+        patch(
+            "app.api.v1.organizations.get_user_household_id",
+            new=AsyncMock(return_value=HOUSEHOLD_ID),
+        ),
         patch("app.api.v1.organizations.create_org", new=AsyncMock(return_value=org)),
     ):
         resp = app_client.post(
@@ -165,8 +171,13 @@ def test_create_org_unauthenticated(unauthed_client):
 def test_list_orgs_returns_list(app_client):
     orgs = [make_org(), make_org(id=uuid.uuid4(), name="Beta Inc")]
     with (
-        patch("app.api.v1.organizations.get_user_household_id", new=AsyncMock(return_value=None)),
-        patch("app.api.v1.organizations.list_orgs", new=AsyncMock(return_value=(orgs, 2))),
+        patch(
+            "app.api.v1.organizations.get_user_household_id",
+            new=AsyncMock(return_value=None),
+        ),
+        patch(
+            "app.api.v1.organizations.list_orgs", new=AsyncMock(return_value=(orgs, 2))
+        ),
     ):
         resp = app_client.get("/api/v1/organizations/")
     assert resp.status_code == 200
@@ -177,8 +188,13 @@ def test_list_orgs_returns_list(app_client):
 
 def test_list_orgs_empty(app_client):
     with (
-        patch("app.api.v1.organizations.get_user_household_id", new=AsyncMock(return_value=None)),
-        patch("app.api.v1.organizations.list_orgs", new=AsyncMock(return_value=([], 0))),
+        patch(
+            "app.api.v1.organizations.get_user_household_id",
+            new=AsyncMock(return_value=None),
+        ),
+        patch(
+            "app.api.v1.organizations.list_orgs", new=AsyncMock(return_value=([], 0))
+        ),
     ):
         resp = app_client.get("/api/v1/organizations/")
     assert resp.status_code == 200
@@ -191,7 +207,10 @@ def test_list_orgs_empty(app_client):
 def test_get_org_found(app_client):
     org = make_org()
     with (
-        patch("app.api.v1.organizations.get_user_household_id", new=AsyncMock(return_value=None)),
+        patch(
+            "app.api.v1.organizations.get_user_household_id",
+            new=AsyncMock(return_value=None),
+        ),
         patch("app.api.v1.organizations.get_org", new=AsyncMock(return_value=org)),
     ):
         resp = app_client.get(f"/api/v1/organizations/{ORG_ID}")
@@ -201,7 +220,10 @@ def test_get_org_found(app_client):
 
 def test_get_org_not_found(app_client):
     with (
-        patch("app.api.v1.organizations.get_user_household_id", new=AsyncMock(return_value=None)),
+        patch(
+            "app.api.v1.organizations.get_user_household_id",
+            new=AsyncMock(return_value=None),
+        ),
         patch("app.api.v1.organizations.get_org", new=AsyncMock(return_value=None)),
     ):
         resp = app_client.get(f"/api/v1/organizations/{uuid.uuid4()}")
@@ -214,8 +236,13 @@ def test_get_org_not_found(app_client):
 def test_patch_org_success(app_client):
     updated = make_org(name="Acme International")
     with (
-        patch("app.api.v1.organizations.get_user_household_id", new=AsyncMock(return_value=None)),
-        patch("app.api.v1.organizations.update_org", new=AsyncMock(return_value=updated)),
+        patch(
+            "app.api.v1.organizations.get_user_household_id",
+            new=AsyncMock(return_value=None),
+        ),
+        patch(
+            "app.api.v1.organizations.update_org", new=AsyncMock(return_value=updated)
+        ),
     ):
         resp = app_client.patch(
             f"/api/v1/organizations/{ORG_ID}", json={"name": "Acme International"}
@@ -226,7 +253,10 @@ def test_patch_org_success(app_client):
 
 def test_patch_org_not_found(app_client):
     with (
-        patch("app.api.v1.organizations.get_user_household_id", new=AsyncMock(return_value=None)),
+        patch(
+            "app.api.v1.organizations.get_user_household_id",
+            new=AsyncMock(return_value=None),
+        ),
         patch("app.api.v1.organizations.update_org", new=AsyncMock(return_value=None)),
     ):
         resp = app_client.patch(
@@ -247,7 +277,9 @@ def test_delete_org_success(app_client):
 
 
 def test_delete_org_not_found(app_client):
-    with patch("app.api.v1.organizations.soft_delete_org", new=AsyncMock(return_value=None)):
+    with patch(
+        "app.api.v1.organizations.soft_delete_org", new=AsyncMock(return_value=None)
+    ):
         resp = app_client.delete(f"/api/v1/organizations/{uuid.uuid4()}")
     assert resp.status_code == 404
 
@@ -258,9 +290,16 @@ def test_delete_org_not_found(app_client):
 def test_link_person_org_success(app_client):
     link = make_person_org()
     with (
-        patch("app.api.v1.organizations.get_user_household_id", new=AsyncMock(return_value=None)),
-        patch("app.api.v1.organizations.get_person", new=AsyncMock(return_value=object())),
-        patch("app.api.v1.organizations.link_person_org", new=AsyncMock(return_value=link)),
+        patch(
+            "app.api.v1.organizations.get_user_household_id",
+            new=AsyncMock(return_value=None),
+        ),
+        patch(
+            "app.api.v1.organizations.get_person", new=AsyncMock(return_value=object())
+        ),
+        patch(
+            "app.api.v1.organizations.link_person_org", new=AsyncMock(return_value=link)
+        ),
     ):
         resp = app_client.post(
             f"/api/v1/persons/{PERSON_ID}/organizations/",
@@ -272,7 +311,10 @@ def test_link_person_org_success(app_client):
 
 def test_link_person_org_person_not_found(app_client):
     with (
-        patch("app.api.v1.organizations.get_user_household_id", new=AsyncMock(return_value=None)),
+        patch(
+            "app.api.v1.organizations.get_user_household_id",
+            new=AsyncMock(return_value=None),
+        ),
         patch("app.api.v1.organizations.get_person", new=AsyncMock(return_value=None)),
     ):
         resp = app_client.post(
@@ -288,9 +330,17 @@ def test_link_person_org_person_not_found(app_client):
 def test_list_person_orgs(app_client):
     links = [make_person_org()]
     with (
-        patch("app.api.v1.organizations.get_user_household_id", new=AsyncMock(return_value=None)),
-        patch("app.api.v1.organizations.get_person", new=AsyncMock(return_value=object())),
-        patch("app.api.v1.organizations.list_person_orgs", new=AsyncMock(return_value=links)),
+        patch(
+            "app.api.v1.organizations.get_user_household_id",
+            new=AsyncMock(return_value=None),
+        ),
+        patch(
+            "app.api.v1.organizations.get_person", new=AsyncMock(return_value=object())
+        ),
+        patch(
+            "app.api.v1.organizations.list_person_orgs",
+            new=AsyncMock(return_value=links),
+        ),
     ):
         resp = app_client.get(f"/api/v1/persons/{PERSON_ID}/organizations/")
     assert resp.status_code == 200
@@ -299,7 +349,10 @@ def test_list_person_orgs(app_client):
 
 def test_list_person_orgs_person_not_found(app_client):
     with (
-        patch("app.api.v1.organizations.get_user_household_id", new=AsyncMock(return_value=None)),
+        patch(
+            "app.api.v1.organizations.get_user_household_id",
+            new=AsyncMock(return_value=None),
+        ),
         patch("app.api.v1.organizations.get_person", new=AsyncMock(return_value=None)),
     ):
         resp = app_client.get(f"/api/v1/persons/{uuid.uuid4()}/organizations/")
@@ -312,7 +365,8 @@ def test_list_person_orgs_person_not_found(app_client):
 def test_patch_person_org_link(app_client):
     updated = make_person_org(role="Senior Engineer", is_current=True)
     with patch(
-        "app.api.v1.organizations.update_person_org", new=AsyncMock(return_value=updated)
+        "app.api.v1.organizations.update_person_org",
+        new=AsyncMock(return_value=updated),
     ):
         resp = app_client.patch(
             f"/api/v1/persons/{PERSON_ID}/organizations/{LINK_ID}",
@@ -338,11 +392,10 @@ def test_patch_person_org_link_not_found(app_client):
 
 def test_unlink_person_org_success(app_client):
     with patch(
-        "app.api.v1.organizations.unlink_person_org", new=AsyncMock(return_value=object())
+        "app.api.v1.organizations.unlink_person_org",
+        new=AsyncMock(return_value=object()),
     ):
-        resp = app_client.delete(
-            f"/api/v1/persons/{PERSON_ID}/organizations/{LINK_ID}"
-        )
+        resp = app_client.delete(f"/api/v1/persons/{PERSON_ID}/organizations/{LINK_ID}")
     assert resp.status_code == 204
 
 

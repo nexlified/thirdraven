@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -76,8 +76,13 @@ def app_client():
 def test_create_observation_success(app_client):
     obs = make_observation()
     with (
-        patch("app.api.v1.observations.get_person", new=AsyncMock(return_value=object())),
-        patch("app.api.v1.observations.create_observation", new=AsyncMock(return_value=obs)),
+        patch(
+            "app.api.v1.observations.get_person", new=AsyncMock(return_value=object())
+        ),
+        patch(
+            "app.api.v1.observations.create_observation",
+            new=AsyncMock(return_value=obs),
+        ),
     ):
         resp = app_client.post(
             f"/api/v1/persons/{PERSON_ID}/observations/",
@@ -99,7 +104,9 @@ def test_create_observation_person_not_found(app_client):
 
 
 def test_create_observation_missing_body(app_client):
-    with patch("app.api.v1.observations.get_person", new=AsyncMock(return_value=object())):
+    with patch(
+        "app.api.v1.observations.get_person", new=AsyncMock(return_value=object())
+    ):
         resp = app_client.post(
             f"/api/v1/persons/{PERSON_ID}/observations/",
             json={"context": "personal"},
@@ -110,8 +117,13 @@ def test_create_observation_missing_body(app_client):
 def test_create_observation_sensitive_with_tags(app_client):
     obs = make_observation(is_sensitive=True, tags=[INSIGHTFUL_TAG])
     with (
-        patch("app.api.v1.observations.get_person", new=AsyncMock(return_value=object())),
-        patch("app.api.v1.observations.create_observation", new=AsyncMock(return_value=obs)),
+        patch(
+            "app.api.v1.observations.get_person", new=AsyncMock(return_value=object())
+        ),
+        patch(
+            "app.api.v1.observations.create_observation",
+            new=AsyncMock(return_value=obs),
+        ),
     ):
         resp = app_client.post(
             f"/api/v1/persons/{PERSON_ID}/observations/",
@@ -131,9 +143,14 @@ def test_create_observation_sensitive_with_tags(app_client):
 
 
 def test_list_observations_returns_list(app_client):
-    obs_list = [make_observation(), make_observation(id=uuid.uuid4(), body="Very curious")]
+    obs_list = [
+        make_observation(),
+        make_observation(id=uuid.uuid4(), body="Very curious"),
+    ]
     with (
-        patch("app.api.v1.observations.get_person", new=AsyncMock(return_value=object())),
+        patch(
+            "app.api.v1.observations.get_person", new=AsyncMock(return_value=object())
+        ),
         patch(
             "app.api.v1.observations.list_observations",
             new=AsyncMock(return_value=(obs_list, 2)),
@@ -154,7 +171,9 @@ def test_list_observations_person_not_found(app_client):
 
 def test_list_observations_exclude_sensitive(app_client):
     with (
-        patch("app.api.v1.observations.get_person", new=AsyncMock(return_value=object())),
+        patch(
+            "app.api.v1.observations.get_person", new=AsyncMock(return_value=object())
+        ),
         patch(
             "app.api.v1.observations.list_observations",
             new=AsyncMock(return_value=([], 0)),
@@ -169,7 +188,9 @@ def test_list_observations_exclude_sensitive(app_client):
 
 def test_list_observations_context_filter(app_client):
     with (
-        patch("app.api.v1.observations.get_person", new=AsyncMock(return_value=object())),
+        patch(
+            "app.api.v1.observations.get_person", new=AsyncMock(return_value=object())
+        ),
         patch(
             "app.api.v1.observations.list_observations",
             new=AsyncMock(return_value=([], 0)),
@@ -187,21 +208,29 @@ def test_list_observations_context_filter(app_client):
 
 def test_get_observation_found(app_client):
     obs = make_observation()
-    with patch("app.api.v1.observations.get_observation", new=AsyncMock(return_value=obs)):
+    with patch(
+        "app.api.v1.observations.get_observation", new=AsyncMock(return_value=obs)
+    ):
         resp = app_client.get(f"/api/v1/persons/{PERSON_ID}/observations/{OBS_ID}")
     assert resp.status_code == 200
     assert resp.json()["id"] == str(OBS_ID)
 
 
 def test_get_observation_not_found(app_client):
-    with patch("app.api.v1.observations.get_observation", new=AsyncMock(return_value=None)):
-        resp = app_client.get(f"/api/v1/persons/{PERSON_ID}/observations/{uuid.uuid4()}")
+    with patch(
+        "app.api.v1.observations.get_observation", new=AsyncMock(return_value=None)
+    ):
+        resp = app_client.get(
+            f"/api/v1/persons/{PERSON_ID}/observations/{uuid.uuid4()}"
+        )
     assert resp.status_code == 404
 
 
 def test_get_observation_wrong_person(app_client):
     obs = make_observation(person_id=uuid.uuid4())
-    with patch("app.api.v1.observations.get_observation", new=AsyncMock(return_value=obs)):
+    with patch(
+        "app.api.v1.observations.get_observation", new=AsyncMock(return_value=obs)
+    ):
         resp = app_client.get(f"/api/v1/persons/{PERSON_ID}/observations/{OBS_ID}")
     assert resp.status_code == 404
 
@@ -212,7 +241,8 @@ def test_get_observation_wrong_person(app_client):
 def test_patch_observation_success(app_client):
     updated = make_observation(body="Updated observation", context="professional")
     with patch(
-        "app.api.v1.observations.update_observation", new=AsyncMock(return_value=updated)
+        "app.api.v1.observations.update_observation",
+        new=AsyncMock(return_value=updated),
     ):
         resp = app_client.patch(
             f"/api/v1/persons/{PERSON_ID}/observations/{OBS_ID}",
@@ -238,9 +268,12 @@ def test_patch_observation_not_found(app_client):
 
 def test_delete_observation_success(app_client):
     with (
-        patch("app.api.v1.observations.get_person", new=AsyncMock(return_value=object())),
         patch(
-            "app.api.v1.observations.delete_observation", new=AsyncMock(return_value=object())
+            "app.api.v1.observations.get_person", new=AsyncMock(return_value=object())
+        ),
+        patch(
+            "app.api.v1.observations.delete_observation",
+            new=AsyncMock(return_value=object()),
         ),
     ):
         resp = app_client.delete(f"/api/v1/persons/{PERSON_ID}/observations/{OBS_ID}")
@@ -257,9 +290,12 @@ def test_delete_observation_person_not_found(app_client):
 
 def test_delete_observation_not_found(app_client):
     with (
-        patch("app.api.v1.observations.get_person", new=AsyncMock(return_value=object())),
         patch(
-            "app.api.v1.observations.delete_observation", new=AsyncMock(return_value=None)
+            "app.api.v1.observations.get_person", new=AsyncMock(return_value=object())
+        ),
+        patch(
+            "app.api.v1.observations.delete_observation",
+            new=AsyncMock(return_value=None),
         ),
     ):
         resp = app_client.delete(

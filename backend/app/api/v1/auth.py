@@ -113,4 +113,3 @@ async def reset_password(
     if not ok:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
     return MessageResponse(message="Password updated successfully")
-

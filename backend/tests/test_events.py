@@ -171,7 +171,9 @@ def test_create_event_unauthenticated(unauthed_client):
 
 def test_list_events_returns_list(app_client):
     events = [make_event(), make_event(id=uuid.uuid4(), title="Offsite")]
-    with patch("app.api.v1.events.list_events", new=AsyncMock(return_value=(events, 2))):
+    with patch(
+        "app.api.v1.events.list_events", new=AsyncMock(return_value=(events, 2))
+    ):
         resp = app_client.get("/api/v1/events/")
     assert resp.status_code == 200
     data = resp.json()
@@ -232,7 +234,9 @@ def test_patch_event_partial_update(app_client):
     with patch(
         "app.api.v1.events.update_event", new=AsyncMock(return_value=updated)
     ) as mock_update:
-        resp = app_client.patch(f"/api/v1/events/{EVENT_ID}", json={"location": "New York"})
+        resp = app_client.patch(
+            f"/api/v1/events/{EVENT_ID}", json={"location": "New York"}
+        )
     assert resp.status_code == 200
     update_data = mock_update.call_args.args[3]
     assert update_data.location == "New York"
@@ -293,12 +297,16 @@ def test_list_event_persons(app_client):
 
 
 def test_remove_event_person_success(app_client):
-    with patch("app.api.v1.events.remove_event_person", new=AsyncMock(return_value=object())):
+    with patch(
+        "app.api.v1.events.remove_event_person", new=AsyncMock(return_value=object())
+    ):
         resp = app_client.delete(f"/api/v1/events/{EVENT_ID}/persons/{EVENT_PERSON_ID}")
     assert resp.status_code == 204
 
 
 def test_remove_event_person_not_found(app_client):
-    with patch("app.api.v1.events.remove_event_person", new=AsyncMock(return_value=None)):
+    with patch(
+        "app.api.v1.events.remove_event_person", new=AsyncMock(return_value=None)
+    ):
         resp = app_client.delete(f"/api/v1/events/{EVENT_ID}/persons/{uuid.uuid4()}")
     assert resp.status_code == 404

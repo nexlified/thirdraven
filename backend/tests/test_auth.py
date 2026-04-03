@@ -1,6 +1,6 @@
 import uuid
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi import FastAPI
@@ -76,7 +76,9 @@ def authed_client():
 def test_register_success(client):
     with (
         patch("app.api.v1.auth.get_user_by_username", new=AsyncMock(return_value=None)),
-        patch("app.api.v1.auth.create_user", new=AsyncMock(return_value=FAKE_USER_PUBLIC)),
+        patch(
+            "app.api.v1.auth.create_user", new=AsyncMock(return_value=FAKE_USER_PUBLIC)
+        ),
     ):
         resp = client.post(
             "/api/v1/auth/register",
@@ -121,7 +123,10 @@ def test_register_missing_required_fields(client):
 
 def test_login_success(client):
     with (
-        patch("app.api.v1.auth.get_user_by_username", new=AsyncMock(return_value=FAKE_USER)),
+        patch(
+            "app.api.v1.auth.get_user_by_username",
+            new=AsyncMock(return_value=FAKE_USER),
+        ),
         patch("app.api.v1.auth.verify_password", return_value=True),
         patch("app.api.v1.auth.create_access_token", return_value="fake-jwt-token"),
     ):
@@ -137,7 +142,10 @@ def test_login_success(client):
 
 def test_login_wrong_password(client):
     with (
-        patch("app.api.v1.auth.get_user_by_username", new=AsyncMock(return_value=FAKE_USER)),
+        patch(
+            "app.api.v1.auth.get_user_by_username",
+            new=AsyncMock(return_value=FAKE_USER),
+        ),
         patch("app.api.v1.auth.verify_password", return_value=False),
     ):
         resp = client.post(
@@ -148,7 +156,9 @@ def test_login_wrong_password(client):
 
 
 def test_login_unknown_user(client):
-    with patch("app.api.v1.auth.get_user_by_username", new=AsyncMock(return_value=None)):
+    with patch(
+        "app.api.v1.auth.get_user_by_username", new=AsyncMock(return_value=None)
+    ):
         resp = client.post(
             "/api/v1/auth/login",
             data={"username": "ghost", "password": "secret123"},
@@ -226,7 +236,7 @@ def test_forgot_password_returns_token(client):
         )
     assert resp.status_code == 200
     body = resp.json()
-    assert "reset-token-abc" == body["reset_token"]
+    assert body["reset_token"] == "reset-token-abc"
 
 
 def test_forgot_password_invalid_email(client):

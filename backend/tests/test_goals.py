@@ -145,7 +145,9 @@ def test_list_goals_person_not_found(app_client):
 def test_list_goals_active_only_filter(app_client):
     with (
         patch("app.api.v1.goals.get_person", new=AsyncMock(return_value=object())),
-        patch("app.api.v1.goals.list_goals", new=AsyncMock(return_value=([], 0))) as mock_list,
+        patch(
+            "app.api.v1.goals.list_goals", new=AsyncMock(return_value=([], 0))
+        ) as mock_list,
     ):
         app_client.get(f"/api/v1/persons/{PERSON_ID}/goals/?active_only=true")
     call_kwargs = mock_list.call_args.kwargs
@@ -172,7 +174,9 @@ def test_get_goal_not_found(app_client):
 def test_get_goal_wrong_person(app_client):
     # Goal belongs to different person — router checks goal.person_id != person_id
     wrong_person_goal = make_goal(person_id=uuid.uuid4())
-    with patch("app.api.v1.goals.get_goal", new=AsyncMock(return_value=wrong_person_goal)):
+    with patch(
+        "app.api.v1.goals.get_goal", new=AsyncMock(return_value=wrong_person_goal)
+    ):
         resp = app_client.get(f"/api/v1/persons/{PERSON_ID}/goals/{GOAL_ID}")
     assert resp.status_code == 404
 
@@ -193,7 +197,9 @@ def test_patch_goal_success(app_client):
 
 def test_patch_goal_mark_achieved(app_client):
     achieved_goal = make_goal(achieved_at=datetime.now(UTC))
-    with patch("app.api.v1.goals.update_goal", new=AsyncMock(return_value=achieved_goal)):
+    with patch(
+        "app.api.v1.goals.update_goal", new=AsyncMock(return_value=achieved_goal)
+    ):
         resp = app_client.patch(
             f"/api/v1/persons/{PERSON_ID}/goals/{GOAL_ID}", json={"achieved": True}
         )
