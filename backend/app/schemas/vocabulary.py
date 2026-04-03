@@ -9,6 +9,7 @@ class TermSlim(BaseModel):
     id: uuid.UUID
     name: str
     slug: str
+    icon: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -56,6 +57,7 @@ class TermCreate(BaseModel):
     weight: int = 0
     external_id: str | None = None
     metadata_: dict[str, Any] | None = None
+    icon: str | None = None
 
 
 class TermUpdate(BaseModel):
@@ -65,6 +67,7 @@ class TermUpdate(BaseModel):
     weight: int | None = None
     external_id: str | None = None
     metadata_: dict[str, Any] | None = None
+    icon: str | None = None
     is_active: bool | None = None
 
 
@@ -77,6 +80,7 @@ class TermPublic(BaseModel):
     parent_id: uuid.UUID | None
     weight: int
     external_id: str | None
+    icon: str | None
     is_active: bool
     created_at: datetime
 

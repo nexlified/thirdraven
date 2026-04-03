@@ -23,6 +23,7 @@ export interface TermPublic {
   parent_id: string | null;
   weight: number;
   external_id: string | null;
+  icon: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -32,12 +33,14 @@ export interface TermCreate {
   slug: string;
   description?: string;
   weight?: number;
+  icon?: string | null;
 }
 
 export interface TermUpdate {
   name?: string;
   description?: string;
   weight?: number;
+  icon?: string | null;
   is_active?: boolean;
 }
 

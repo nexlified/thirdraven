@@ -162,6 +162,7 @@ async def create_term(db: AsyncSession, machine_name: str, data: TermCreate) -> 
         weight=data.weight,
         external_id=data.external_id,
         metadata_=data.metadata_,
+        icon=data.icon,
     )
     db.add(term)
     await db.commit()

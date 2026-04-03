@@ -54,6 +54,7 @@ def make_term(**kwargs) -> TermPublic:
         parent_id=None,
         weight=0,
         external_id=None,
+        icon=None,
         is_active=True,
         created_at=datetime.now(UTC),
     )
@@ -355,3 +356,70 @@ def test_delete_vocabulary_term_not_found(app_client):
             "/api/v1/vocabularies/asset-categories/terms/nonexistent"
         )
     assert resp.status_code == 404
+
+
+# ── Icon field ────────────────────────────────────────────────────────────────
+
+
+def test_term_public_includes_icon_field(app_client):
+    """TermPublic response must include the icon field."""
+    term = make_term(icon="cpu")
+    with patch(
+        "app.api.v1.vocabularies.get_term_by_slug", new=AsyncMock(return_value=term)
+    ):
+        resp = app_client.get("/api/v1/vocabularies/asset-categories/terms/hardware")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "icon" in body
+    assert body["icon"] == "cpu"
+
+
+def test_term_public_icon_null_by_default(app_client):
+    """TermPublic icon field is null when no icon is set."""
+    term = make_term()
+    with patch(
+        "app.api.v1.vocabularies.get_term_by_slug", new=AsyncMock(return_value=term)
+    ):
+        resp = app_client.get("/api/v1/vocabularies/asset-categories/terms/hardware")
+    assert resp.status_code == 200
+    assert resp.json()["icon"] is None
+
+
+def test_create_term_with_icon(app_client):
+    """Creating a term with an icon stores and returns the icon."""
+    term = make_term(icon="wrench")
+    with patch("app.api.v1.vocabularies.create_term", new=AsyncMock(return_value=term)):
+        resp = app_client.post(
+            "/api/v1/vocabularies/asset-categories/terms",
+            json={"name": "Hardware", "slug": "hardware", "icon": "wrench"},
+        )
+    assert resp.status_code == 201
+    assert resp.json()["icon"] == "wrench"
+
+
+def test_patch_term_with_icon(app_client):
+    """Updating a term's icon stores and returns the new icon."""
+    updated = make_term(name="Hardware", icon="server")
+    with patch(
+        "app.api.v1.vocabularies.update_term", new=AsyncMock(return_value=updated)
+    ):
+        resp = app_client.patch(
+            "/api/v1/vocabularies/asset-categories/terms/hardware",
+            json={"icon": "server"},
+        )
+    assert resp.status_code == 200
+    assert resp.json()["icon"] == "server"
+
+
+def test_list_terms_includes_icon(app_client):
+    """Listed terms include the icon field."""
+    terms = [
+        make_term(icon="box"),
+        make_term(id=uuid.uuid4(), name="Software", slug="software", icon=None),
+    ]
+    with patch("app.api.v1.vocabularies.list_terms", new=AsyncMock(return_value=terms)):
+        resp = app_client.get("/api/v1/vocabularies/asset-categories/terms")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data[0]["icon"] == "box"
+    assert data[1]["icon"] is None

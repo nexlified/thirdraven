@@ -42,10 +42,101 @@ The vocabulary/term system replaces all of those patterns with a flexible, datab
 | `weight` | int | Sort weight; lower numbers sort first (default: `0`) |
 | `external_id` | str \| None | ID from an external taxonomy provider |
 | `metadata_` | dict \| None | Arbitrary JSON key-value data |
+| `icon` | str \| None | [Lucide](https://lucide.dev) icon name (e.g., `"star"`, `"briefcase"`, `"heart"`). `null` means no icon. |
 | `is_active` | bool | Soft visibility flag |
 | `created_at` | datetime | |
 
 The `(vocabulary_id, slug)` pair is unique — the same slug can exist in different vocabularies.
+
+---
+
+## Icons
+
+Each term carries an optional `icon` field containing a **[Lucide](https://lucide.dev) icon name** — a lowercase, hyphen-separated string such as `"star"`, `"briefcase"`, or `"heart"`. The icon name is library-agnostic storage; rendering is done client-side using the Lucide library for your platform.
+
+The seed script populates icons for all built-in terms. User-created terms default to `null` (no icon). Clients should always handle the `null` case gracefully.
+
+### Rendering Icons in React
+
+Install the `lucide-react` package:
+
+```bash
+npm install lucide-react
+```
+
+Use the `DynamicIcon` helper to render a term's icon by name:
+
+```tsx
+import { icons, type LucideProps } from "lucide-react";
+
+interface TermIconProps extends LucideProps {
+  name: string | null;
+  fallback?: React.ReactNode;
+}
+
+function TermIcon({ name, fallback = null, ...props }: TermIconProps) {
+  if (!name) return <>{fallback}</>;
+  // Lucide icon names are kebab-case; component names are PascalCase
+  const key = name
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join("") as keyof typeof icons;
+  const Icon = icons[key];
+  if (!Icon) return <>{fallback}</>;
+  return <Icon {...props} />;
+}
+
+// Usage
+<TermIcon name={term.icon} size={16} />
+```
+
+For static imports (better tree-shaking), import the icon directly:
+
+```tsx
+import { Star } from "lucide-react";
+
+<Star size={16} />
+```
+
+### Rendering Icons in Flutter
+
+Add the `lucide_icons` package:
+
+```yaml
+# pubspec.yaml
+dependencies:
+  lucide_icons: ^0.0.2
+```
+
+Map the icon name from the API to the Flutter `LucideIcons` constant. Icon names use camelCase in the Dart package:
+
+```dart
+import 'package:lucide_icons/lucide_icons.dart';
+
+IconData? termIconData(String? iconName) {
+  if (iconName == null) return null;
+  // Convert kebab-case to camelCase
+  final camel = iconName.splitMapJoin(
+    RegExp(r'-([a-z])'),
+    onMatch: (m) => m.group(1)!.toUpperCase(),
+    onNonMatch: (s) => s,
+  );
+  // Look up by name using a reflection-style map (generate or maintain manually)
+  const iconMap = <String, IconData>{
+    'star': LucideIcons.star,
+    'briefcase': LucideIcons.briefcase,
+    'heart': LucideIcons.heart,
+    'smile': LucideIcons.smile,
+    'users': LucideIcons.users,
+    // add other icons your app uses
+  };
+  return iconMap[iconName];
+}
+
+// Usage
+final iconData = termIconData(term.icon);
+if (iconData != null) Icon(iconData, size: 16)
+```
 
 ---
 
@@ -107,17 +198,25 @@ All resolvers raise HTTP 422 if the code is not found.
 
 The following vocabularies are created by `python -m seeds.seed_data`. All are `is_locked = true` to prevent accidental deletion.
 
-| `machine_name` | Locked | Hierarchical | Example Terms |
+| `machine_name` | Locked | Hierarchical | Example Terms (with icons) |
 |---|---|---|---|
-| `person-tags` | yes | no | `friend`, `vip`, `mentor`, `colleague` |
-| `relationship-types` | yes | no | `friend`, `family`, `colleague`, `acquaintance`, `mentor`, `mentee` |
-| `name-prefixes` | yes | no | `mr`, `ms`, `mrs`, `dr`, `prof` |
-| `genders` | yes | no | `male`, `female`, `non-binary`, `prefer-not-to-say` |
-| `occupations` | yes | no | `software-engineer`, `designer`, `doctor`, `teacher` (100+ entries) |
-| `asset-categories` | yes | no | `hardware`, `software`, `tool`, `vehicle`, `appliance` |
-| `asset-statuses` | yes | no | `active`, `inactive`, `retired`, `lost`, `sold` |
-| `asset-tags` | yes | no | `work`, `personal`, `shared`, `borrowed` |
-| `interaction-types` | yes | no | `call`, `email`, `coffee`, `meeting`, `message`, `event` |
+| `person-tags` | yes | no | `friend` (smile), `vip` (star), `work` (briefcase) |
+| `relationship-types` | yes | no | `friend` (smile), `colleague` (briefcase), `mentor` (book-open) |
+| `name-prefixes` | yes | no | `mr`, `ms`, `dr` (no icons) |
+| `genders` | yes | no | `male` (user), `female` (user), `non-binary` (user) |
+| `occupations` | yes | no | `software-engineer` (code), `doctor` (stethoscope), `teacher` (book-open) |
+| `asset-categories` | yes | no | `electronics` (cpu), `vehicle` (car), `software-license` (code) |
+| `asset-statuses` | yes | no | `active` (check-circle), `broken` (x-circle), `sold` (tag) |
+| `asset-tags` | yes | no | `essential` (star), `needs-repair` (wrench) |
+| `interaction-types` | yes | no | `meeting` (users), `phone-call` (phone), `email` (mail) |
+| `communication-channels` | no | no | `email` (mail), `whatsapp` (message-circle), `slack` (hash) |
+| `life-event-types` | no | yes | `graduated` (graduation-cap), `got-married` (heart) |
+| `life-event-emotions` | no | no | `happy` (smile), `sad` (frown), `excited` (zap) |
+| `significant-date-types` | no | no | `birthday` (cake), `wedding-anniversary` (heart) |
+| `observation-tags` | no | no | `gift-idea` (gift), `interests` (heart) |
+| `asset-conditions` | yes | no | `new` (star), `broken-condition` (x-circle) |
+| `document-asset-types` | no | no | `passport` (book), `drivers-license` (car) |
+| `financial-account-types` | no | no | `savings` (piggy-bank), `credit-card` (credit-card) |
 
 ---
 
@@ -134,7 +233,8 @@ Content-Type: application/json
   "name": "Investor",
   "slug": "investor",
   "description": "People who have invested in my projects",
-  "weight": 10
+  "weight": 10,
+  "icon": "trending-up"
 }
 ```
 
@@ -151,7 +251,8 @@ POST /api/v1/vocabularies/occupations/terms
 {
   "name": "Frontend Engineer",
   "slug": "frontend-engineer",
-  "parent_id": "<uuid of software-engineer term>"
+  "parent_id": "<uuid of software-engineer term>",
+  "icon": "code"
 }
 ```
 
