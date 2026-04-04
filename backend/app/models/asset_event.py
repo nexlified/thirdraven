@@ -4,6 +4,10 @@ from datetime import UTC, date, datetime
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class AssetEvent(SQLModel, table=True):
     __tablename__ = "asset_event"
 
@@ -18,4 +22,4 @@ class AssetEvent(SQLModel, table=True):
     cost: float | None = None
     currency: str | None = None  # ISO 4217
     vendor: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=_naive_utc_now)

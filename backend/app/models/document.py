@@ -4,6 +4,10 @@ from datetime import UTC, date, datetime
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class Document(SQLModel, table=True):
     __tablename__ = "document"
 
@@ -28,5 +32,5 @@ class Document(SQLModel, table=True):
     expires_on: date | None = None  # for docs with validity (insurance cert, visa copy)
     notes: str | None = None
 
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=_naive_utc_now)
+    updated_at: datetime = Field(default_factory=_naive_utc_now)

@@ -10,6 +10,25 @@ from app.api.v1.auth import router as auth_router
 from app.core.database import get_session
 
 
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--run-integration",
+        action="store_true",
+        default=False,
+        help="Run integration tests (requires a live PostgreSQL database)",
+    )
+
+
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: list[pytest.Item]
+) -> None:
+    if not config.getoption("--run-integration"):
+        skip = pytest.mark.skip(reason="Pass --run-integration to run")
+        for item in items:
+            if "integration" in item.keywords:
+                item.add_marker(skip)
+
+
 @pytest.fixture
 def fake_db() -> AsyncMock:
     return AsyncMock(spec=AsyncSession)

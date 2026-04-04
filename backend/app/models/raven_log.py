@@ -4,6 +4,10 @@ from datetime import UTC, datetime
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class RavenLog(SQLModel, table=True):
     __tablename__ = "raven_log"
 
@@ -16,4 +20,4 @@ class RavenLog(SQLModel, table=True):
     decision: str  # created|merged|flagged|skipped|needs_clarification
     reasoning: str | None = None
     target_id: uuid.UUID | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=_naive_utc_now)

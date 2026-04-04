@@ -4,6 +4,10 @@ from datetime import UTC, datetime
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class PersonRelationship(SQLModel, table=True):
     __tablename__ = "person_relationship"
 
@@ -14,4 +18,4 @@ class PersonRelationship(SQLModel, table=True):
     inverse_id: uuid.UUID | None = Field(
         default=None, foreign_key="person_relationship.id", nullable=True
     )
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=_naive_utc_now)

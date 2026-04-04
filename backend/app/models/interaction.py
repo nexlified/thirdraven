@@ -6,6 +6,10 @@ from sqlalchemy import JSON, Column
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class Interaction(SQLModel, table=True):
     __tablename__ = "interaction"
 
@@ -21,5 +25,5 @@ class Interaction(SQLModel, table=True):
     metadata_: dict[str, Any] | None = Field(
         default=None, sa_column=Column("metadata", JSON, nullable=True)
     )
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=_naive_utc_now)
+    updated_at: datetime = Field(default_factory=_naive_utc_now)

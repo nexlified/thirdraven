@@ -208,9 +208,7 @@ def _make_summary(**kwargs) -> TransactionSummary:
                 percentage=100.0,
             )
         ],
-        daily_totals=[
-            DailyTotal(date=date(2026, 4, 1), income=50000.0, expense=500.0)
-        ],
+        daily_totals=[DailyTotal(date=date(2026, 4, 1), income=50000.0, expense=500.0)],
         currency="INR",
     )
     defaults.update(kwargs)
@@ -386,9 +384,7 @@ def test_patch_transaction_success(app_client):
         "app.api.v1.transactions.update_transaction",
         new=AsyncMock(return_value=tx),
     ):
-        resp = app_client.patch(
-            f"/api/v1/transactions/{TX_ID}", json={"amount": 300.0}
-        )
+        resp = app_client.patch(f"/api/v1/transactions/{TX_ID}", json={"amount": 300.0})
     assert resp.status_code == 200
     assert resp.json()["amount"] == 300.0
 

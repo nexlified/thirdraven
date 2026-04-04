@@ -162,9 +162,7 @@ def test_default_today_used_when_not_provided():
 def test_income_slug_takes_priority_over_expense():
     """If a token matches income, it should not be treated as expense."""
     mixed_expense = EXPENSE_SLUGS | {"salary"}  # salary also in expense (hypothetical)
-    result = parse_transaction_input(
-        "salary 30000", mixed_expense, INCOME_SLUGS, TODAY
-    )
+    result = parse_transaction_input("salary 30000", mixed_expense, INCOME_SLUGS, TODAY)
     assert result.transaction_type == "income"
     assert result.category_slug == "salary"
 

@@ -4,6 +4,10 @@ from datetime import UTC, datetime
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class PersonSignificantDate(SQLModel, table=True):
     __tablename__ = "person_significant_date"
 
@@ -19,5 +23,5 @@ class PersonSignificantDate(SQLModel, table=True):
     year: int | None = None
     recurs_annually: bool = Field(default=True)
     notes: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=_naive_utc_now)
+    updated_at: datetime = Field(default_factory=_naive_utc_now)

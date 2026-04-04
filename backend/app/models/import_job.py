@@ -4,6 +4,10 @@ from datetime import UTC, datetime
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class ImportJob(SQLModel, table=True):
     __tablename__ = "import_job"
 
@@ -16,5 +20,5 @@ class ImportJob(SQLModel, table=True):
     total_rows: int | None = None
     processed_rows: int = Field(default=0)
     error: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=_naive_utc_now)
     completed_at: datetime | None = None

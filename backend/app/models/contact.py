@@ -5,6 +5,10 @@ from sqlalchemy import ARRAY, Column, String
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class Contact(SQLModel, table=True):
     __tablename__ = "contact"
 
@@ -16,6 +20,6 @@ class Contact(SQLModel, table=True):
     phone: str | None = None
     notes: str | None = None
     tags: list[str] = Field(default_factory=list, sa_column=Column(ARRAY(String)))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=_naive_utc_now)
+    updated_at: datetime = Field(default_factory=_naive_utc_now)
     deleted_at: datetime | None = None

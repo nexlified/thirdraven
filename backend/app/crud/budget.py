@@ -86,13 +86,15 @@ async def list_budgets(
             Transaction.category_term_id,
             Transaction.currency,
             func.sum(Transaction.amount).label("total"),
-        ).where(
+        )
+        .where(
             Transaction.owner_id == owner_id,
             Transaction.transaction_type == "expense",
             Transaction.deleted_at.is_(None),
             extract("year", Transaction.transacted_on) == year,
             extract("month", Transaction.transacted_on) == month,
-        ).group_by(Transaction.category_term_id, Transaction.currency)
+        )
+        .group_by(Transaction.category_term_id, Transaction.currency)
     )
     spent_map: dict[tuple[uuid.UUID, str], float] = {
         (row.category_term_id, row.currency): float(row.total)
