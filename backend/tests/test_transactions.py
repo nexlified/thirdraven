@@ -441,3 +441,197 @@ def test_delete_transaction_not_found(app_client):
     ):
         resp = app_client.delete(f"/api/v1/transactions/{uuid.uuid4()}")
     assert resp.status_code == 404
+
+
+# ── POST /transactions/parse ───────────────────────────────────────────────────
+
+EXPENSE_SLUGS = {"fuel", "groceries", "food", "shopping"}
+INCOME_SLUGS = {"salary", "freelance"}
+
+
+def test_parse_transaction_expense(app_client):
+    from app.core.transaction_parser import ParsedTransaction
+
+    parsed = ParsedTransaction(
+        transaction_type="expense",
+        amount=500.0,
+        description="",
+        category_slug="fuel",
+        merchant="fuel",
+        transacted_on=date(2026, 4, 1),
+    )
+    with (
+        patch(
+            "app.api.v1.transactions.get_vocabulary_slugs",
+            new=AsyncMock(side_effect=[EXPENSE_SLUGS, INCOME_SLUGS]),
+        ),
+        patch(
+            "app.core.transaction_parser.parse_transaction_input",
+            return_value=parsed,
+        ),
+    ):
+        resp = app_client.post(
+            "/api/v1/transactions/parse",
+            json={"input": "500 fuel"},
+        )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["transaction_type"] == "expense"
+    assert body["amount"] == 500.0
+    assert body["category"] == "fuel"
+    assert body["merchant"] == "fuel"
+
+
+def test_parse_transaction_income(app_client):
+    from app.core.transaction_parser import ParsedTransaction
+
+    parsed = ParsedTransaction(
+        transaction_type="income",
+        amount=50000.0,
+        description="",
+        category_slug="salary",
+        merchant=None,
+        transacted_on=date(2026, 4, 1),
+    )
+    with (
+        patch(
+            "app.api.v1.transactions.get_vocabulary_slugs",
+            new=AsyncMock(side_effect=[EXPENSE_SLUGS, INCOME_SLUGS]),
+        ),
+        patch(
+            "app.core.transaction_parser.parse_transaction_input",
+            return_value=parsed,
+        ),
+    ):
+        resp = app_client.post(
+            "/api/v1/transactions/parse",
+            json={"input": "salary 50000"},
+        )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["transaction_type"] == "income"
+    assert body["amount"] == 50000.0
+    assert body["category"] == "salary"
+
+
+def test_parse_transaction_no_amount_returns_400(app_client):
+    with (
+        patch(
+            "app.api.v1.transactions.get_vocabulary_slugs",
+            new=AsyncMock(side_effect=[EXPENSE_SLUGS, INCOME_SLUGS]),
+        ),
+        patch(
+            "app.api.v1.transactions.parse_transaction_input",
+            side_effect=ValueError("No numeric amount found in input"),
+        ),
+    ):
+        resp = app_client.post(
+            "/api/v1/transactions/parse",
+            json={"input": "fuel random stuff"},
+        )
+    assert resp.status_code == 400
+    assert "No numeric amount" in resp.json()["detail"]
+
+
+def test_parse_transaction_custom_currency(app_client):
+    from app.core.transaction_parser import ParsedTransaction
+
+    parsed = ParsedTransaction(
+        transaction_type="expense",
+        amount=100.0,
+        description="",
+        category_slug="food",
+        merchant="food",
+        transacted_on=date(2026, 4, 1),
+    )
+    with (
+        patch(
+            "app.api.v1.transactions.get_vocabulary_slugs",
+            new=AsyncMock(side_effect=[EXPENSE_SLUGS, INCOME_SLUGS]),
+        ),
+        patch(
+            "app.core.transaction_parser.parse_transaction_input",
+            return_value=parsed,
+        ),
+    ):
+        resp = app_client.post(
+            "/api/v1/transactions/parse",
+            json={"input": "100 food", "currency": "USD"},
+        )
+    assert resp.status_code == 200
+    assert resp.json()["currency"] == "USD"
+
+
+def test_parse_transaction_no_category(app_client):
+    from app.core.transaction_parser import ParsedTransaction
+
+    parsed = ParsedTransaction(
+        transaction_type="expense",
+        amount=99.0,
+        description="random stuff",
+        category_slug=None,
+        merchant=None,
+        transacted_on=date(2026, 4, 1),
+    )
+    with (
+        patch(
+            "app.api.v1.transactions.get_vocabulary_slugs",
+            new=AsyncMock(side_effect=[EXPENSE_SLUGS, INCOME_SLUGS]),
+        ),
+        patch(
+            "app.core.transaction_parser.parse_transaction_input",
+            return_value=parsed,
+        ),
+    ):
+        resp = app_client.post(
+            "/api/v1/transactions/parse",
+            json={"input": "random stuff 99"},
+        )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["category"] is None
+    assert body["description"] == "random stuff"
+
+
+# ── POST /transactions/quick-add ──────────────────────────────────────────────
+
+
+def test_quick_add_transaction_success(app_client):
+    from app.core.transaction_parser import ParsedTransaction
+
+    parsed = ParsedTransaction(
+        transaction_type="expense",
+        amount=500.0,
+        description="",
+        category_slug="fuel",
+        merchant="fuel",
+        transacted_on=date(2026, 4, 1),
+    )
+    tx = make_transaction(
+        transaction_type="expense",
+        amount=500.0,
+        description="fuel",
+        merchant="fuel",
+    )
+    with (
+        patch(
+            "app.api.v1.transactions.get_vocabulary_slugs",
+            new=AsyncMock(side_effect=[EXPENSE_SLUGS, INCOME_SLUGS]),
+        ),
+        patch(
+            "app.core.transaction_parser.parse_transaction_input",
+            return_value=parsed,
+        ),
+        patch(
+            "app.api.v1.transactions.create_transaction",
+            new=AsyncMock(return_value=tx),
+        ),
+    ):
+        resp = app_client.post(
+            "/api/v1/transactions/quick-add",
+            json={"input": "500 fuel"},
+        )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["transaction_type"] == "expense"
+    assert body["amount"] == 500.0
