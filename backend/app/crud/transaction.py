@@ -1,5 +1,6 @@
 import uuid
-from datetime import UTC, datetime
+from collections import defaultdict
+from datetime import UTC, date, datetime
 
 from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,8 +10,11 @@ from app.crud.vocabulary import resolve_optional_term_slug
 from app.models.transaction import Transaction
 from app.models.vocabulary import Term
 from app.schemas.transaction import (
+    CategoryBreakdown,
+    DailyTotal,
     TransactionCreate,
     TransactionPublic,
+    TransactionSummary,
     TransactionUpdate,
 )
 from app.schemas.vocabulary import TermSlim
@@ -176,9 +180,7 @@ async def list_transactions(
     ).scalar_one()
 
     result = await db.execute(
-        query.order_by(
-            Transaction.transacted_on.desc(), Transaction.created_at.desc()
-        )
+        query.order_by(Transaction.transacted_on.desc(), Transaction.created_at.desc())
         .offset(skip)
         .limit(limit)
     )
@@ -265,3 +267,97 @@ async def create_transactions_bulk(
 
     await db.commit()
     return results
+
+
+async def get_transaction_summary(
+    db: AsyncSession,
+    owner_id: uuid.UUID,
+    date_from: date,
+    date_to: date,
+    currency: str = "INR",
+) -> TransactionSummary:
+    result = await db.execute(
+        select(Transaction).where(
+            Transaction.owner_id == owner_id,
+            Transaction.deleted_at.is_(None),
+            Transaction.currency == currency,
+            Transaction.transacted_on >= date_from,
+            Transaction.transacted_on <= date_to,
+        )
+    )
+    rows = result.scalars().all()
+
+    expenses = [r for r in rows if r.transaction_type == "expense"]
+    incomes = [r for r in rows if r.transaction_type == "income"]
+
+    total_expense = round(sum(r.amount for r in expenses), 2)
+    total_income = round(sum(r.amount for r in incomes), 2)
+    net = round(total_income - total_expense, 2)
+    savings_rate = round(net / total_income, 4) if total_income > 0 else None
+
+    # Bulk-load all distinct category terms referenced
+    all_term_ids = {r.category_term_id for r in rows if r.category_term_id is not None}
+    term_map: dict[uuid.UUID, TermSlim] = {}
+    if all_term_ids:
+        term_result = await db.execute(
+            select(Term).where(Term.id.in_(list(all_term_ids)))
+        )
+        for t in term_result.scalars().all():
+            term_map[t.id] = TermSlim.model_validate(t)
+
+    def _build_breakdown(
+        txns: list[Transaction], grand_total: float
+    ) -> list[CategoryBreakdown]:
+        groups: dict[uuid.UUID | None, list[Transaction]] = defaultdict(list)
+        for r in txns:
+            groups[r.category_term_id].append(r)
+
+        breakdown: list[CategoryBreakdown] = []
+        for term_id, group in groups.items():
+            group_total = round(sum(r.amount for r in group), 2)
+            if term_id is not None and term_id in term_map:
+                slug = term_map[term_id].slug
+                name = term_map[term_id].name
+            else:
+                slug = "uncategorized"
+                name = "Uncategorized"
+            pct = round(group_total / grand_total * 100, 2) if grand_total > 0 else 0.0
+            breakdown.append(
+                CategoryBreakdown(
+                    category_slug=slug,
+                    category_name=name,
+                    total=group_total,
+                    count=len(group),
+                    percentage=pct,
+                )
+            )
+        return sorted(breakdown, key=lambda b: b.total, reverse=True)
+
+    # Daily totals (sparse — only dates with transactions)
+    daily: dict[date, dict[str, float]] = defaultdict(
+        lambda: {"income": 0.0, "expense": 0.0}
+    )
+    for r in rows:
+        daily[r.transacted_on][r.transaction_type] += r.amount
+
+    daily_totals = [
+        DailyTotal(
+            date=d,
+            income=round(v["income"], 2),
+            expense=round(v["expense"], 2),
+        )
+        for d, v in sorted(daily.items())
+    ]
+
+    return TransactionSummary(
+        period_from=date_from,
+        period_to=date_to,
+        total_income=total_income,
+        total_expense=total_expense,
+        net=net,
+        savings_rate=savings_rate,
+        expense_by_category=_build_breakdown(expenses, total_expense),
+        income_by_category=_build_breakdown(incomes, total_income),
+        daily_totals=daily_totals,
+        currency=currency,
+    )

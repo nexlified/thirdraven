@@ -10,7 +10,12 @@ from app.api.v1.transactions import router as transactions_router
 from app.core.database import get_session
 from app.core.deps import get_current_user
 from app.models.user import User
-from app.schemas.transaction import TransactionPublic
+from app.schemas.transaction import (
+    CategoryBreakdown,
+    DailyTotal,
+    TransactionPublic,
+    TransactionSummary,
+)
 from app.schemas.vocabulary import TermSlim
 
 OWNER_ID = uuid.uuid4()
@@ -177,9 +182,126 @@ def test_bulk_create_transactions(app_client):
 # ── GET /transactions/summary ──────────────────────────────────────────────────
 
 
-def test_summary_returns_501(app_client):
-    resp = app_client.get("/api/v1/transactions/summary")
-    assert resp.status_code == 501
+def _make_summary(**kwargs) -> TransactionSummary:
+    defaults = dict(
+        period_from=date(2026, 4, 1),
+        period_to=date(2026, 4, 30),
+        total_income=50000.0,
+        total_expense=12500.0,
+        net=37500.0,
+        savings_rate=0.75,
+        expense_by_category=[
+            CategoryBreakdown(
+                category_slug="food",
+                category_name="Food & Dining",
+                total=5000.0,
+                count=10,
+                percentage=40.0,
+            )
+        ],
+        income_by_category=[
+            CategoryBreakdown(
+                category_slug="salary",
+                category_name="Salary",
+                total=50000.0,
+                count=1,
+                percentage=100.0,
+            )
+        ],
+        daily_totals=[
+            DailyTotal(date=date(2026, 4, 1), income=50000.0, expense=500.0)
+        ],
+        currency="INR",
+    )
+    defaults.update(kwargs)
+    return TransactionSummary(**defaults)
+
+
+def test_summary_default_params(app_client):
+    s = _make_summary()
+    with patch(
+        "app.api.v1.transactions.get_transaction_summary",
+        new=AsyncMock(return_value=s),
+    ):
+        resp = app_client.get("/api/v1/transactions/summary")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total_income"] == 50000.0
+    assert body["total_expense"] == 12500.0
+    assert body["net"] == 37500.0
+    assert body["savings_rate"] == 0.75
+    assert body["currency"] == "INR"
+
+
+def test_summary_with_date_range(app_client):
+    s = _make_summary()
+    with patch(
+        "app.api.v1.transactions.get_transaction_summary",
+        new=AsyncMock(return_value=s),
+    ) as mock_summary:
+        resp = app_client.get(
+            "/api/v1/transactions/summary",
+            params={"date_from": "2026-04-01", "date_to": "2026-04-30"},
+        )
+    assert resp.status_code == 200
+    call_args = mock_summary.call_args
+    # positional: (db, owner_id, date_from, date_to, currency)
+    assert str(call_args.args[2]) == "2026-04-01"
+    assert str(call_args.args[3]) == "2026-04-30"
+
+
+def test_summary_custom_currency(app_client):
+    s = _make_summary(currency="USD")
+    with patch(
+        "app.api.v1.transactions.get_transaction_summary",
+        new=AsyncMock(return_value=s),
+    ) as mock_summary:
+        resp = app_client.get(
+            "/api/v1/transactions/summary", params={"currency": "USD"}
+        )
+    assert resp.status_code == 200
+    call_args = mock_summary.call_args
+    # positional: (db, owner_id, date_from, date_to, currency)
+    assert call_args.args[4] == "USD"
+
+
+def test_summary_null_savings_rate(app_client):
+    s = _make_summary(total_income=0.0, net=-5000.0, savings_rate=None)
+    with patch(
+        "app.api.v1.transactions.get_transaction_summary",
+        new=AsyncMock(return_value=s),
+    ):
+        resp = app_client.get("/api/v1/transactions/summary")
+    assert resp.status_code == 200
+    assert resp.json()["savings_rate"] is None
+
+
+def test_summary_category_breakdown(app_client):
+    s = _make_summary()
+    with patch(
+        "app.api.v1.transactions.get_transaction_summary",
+        new=AsyncMock(return_value=s),
+    ):
+        resp = app_client.get("/api/v1/transactions/summary")
+    body = resp.json()
+    assert len(body["expense_by_category"]) == 1
+    cat = body["expense_by_category"][0]
+    assert cat["category_slug"] == "food"
+    assert cat["percentage"] == 40.0
+    assert cat["count"] == 10
+
+
+def test_summary_daily_totals(app_client):
+    s = _make_summary()
+    with patch(
+        "app.api.v1.transactions.get_transaction_summary",
+        new=AsyncMock(return_value=s),
+    ):
+        resp = app_client.get("/api/v1/transactions/summary")
+    body = resp.json()
+    assert len(body["daily_totals"]) == 1
+    assert body["daily_totals"][0]["date"] == "2026-04-01"
+    assert body["daily_totals"][0]["income"] == 50000.0
 
 
 # ── GET /transactions/ ─────────────────────────────────────────────────────────

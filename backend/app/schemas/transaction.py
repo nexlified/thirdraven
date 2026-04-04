@@ -75,3 +75,30 @@ class TransactionPublic(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class CategoryBreakdown(BaseModel):
+    category_slug: str
+    category_name: str
+    total: float
+    count: int
+    percentage: float
+
+
+class DailyTotal(BaseModel):
+    date: date
+    income: float
+    expense: float
+
+
+class TransactionSummary(BaseModel):
+    period_from: date
+    period_to: date
+    total_income: float
+    total_expense: float
+    net: float
+    savings_rate: float | None
+    expense_by_category: list[CategoryBreakdown]
+    income_by_category: list[CategoryBreakdown]
+    daily_totals: list[DailyTotal]
+    currency: str

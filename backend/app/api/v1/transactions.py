@@ -1,7 +1,8 @@
 import uuid
+from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -10,6 +11,7 @@ from app.crud.transaction import (
     create_transaction,
     create_transactions_bulk,
     get_transaction_public,
+    get_transaction_summary,
     list_transactions,
     soft_delete_transaction,
     update_transaction,
@@ -19,6 +21,7 @@ from app.schemas.paginated import Paginated
 from app.schemas.transaction import (
     TransactionCreate,
     TransactionPublic,
+    TransactionSummary,
     TransactionUpdate,
 )
 
@@ -49,10 +52,21 @@ async def bulk_create(
 
 # IMPORTANT: /summary must be declared before /{id} to prevent FastAPI
 # from parsing "summary" as a UUID parameter.
-@router.get("/summary")
-async def summary():
-    # Placeholder — implemented in BE-05
-    raise HTTPException(status_code=501, detail="Not implemented")
+@router.get("/summary", response_model=TransactionSummary)
+async def summary(
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    date_from: Annotated[date | None, Query()] = None,
+    date_to: Annotated[date | None, Query()] = None,
+    currency: Annotated[str, Query()] = "INR",
+):
+    if date_from is None:
+        date_from = date.today().replace(day=1)
+    if date_to is None:
+        date_to = date.today()
+    return await get_transaction_summary(
+        db, current_user.id, date_from, date_to, currency
+    )
 
 
 @router.get("/", response_model=Paginated[TransactionPublic])
