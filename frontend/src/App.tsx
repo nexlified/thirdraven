@@ -18,6 +18,7 @@ import { Notes } from "./pages/Notes";
 import { Subscriptions } from "./pages/Subscriptions";
 import { Loans } from "./pages/Loans";
 import { Reminders } from "./pages/Reminders";
+import { Transactions } from "./pages/Transactions";
 
 export default function App() {
   return (
@@ -129,6 +130,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transactions"
+            element={
+              <ProtectedRoute>
+                <Transactions />
               </ProtectedRoute>
             }
           />
