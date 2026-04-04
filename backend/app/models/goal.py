@@ -6,6 +6,10 @@ from sqlmodel import Field, SQLModel
 GOAL_TYPES = {"aspiration", "fear", "current-focus", "learning"}
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class PersonGoal(SQLModel, table=True):
     __tablename__ = "person_goal"
 
@@ -17,9 +21,5 @@ class PersonGoal(SQLModel, table=True):
     body: str
     target_date: date | None = None
     achieved_at: datetime | None = None
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    created_at: datetime = Field(default_factory=_naive_utc_now)
+    updated_at: datetime = Field(default_factory=_naive_utc_now)

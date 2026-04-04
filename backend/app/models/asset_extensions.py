@@ -4,14 +4,16 @@ from datetime import UTC, date, datetime
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class PhysicalAsset(SQLModel, table=True):
     __tablename__ = "physical_asset"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     asset_id: uuid.UUID = Field(foreign_key="asset.id", unique=True, index=True)
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    updated_at: datetime = Field(default_factory=_naive_utc_now)
 
     brand: str | None = None
     model_number: str | None = None
@@ -31,9 +33,7 @@ class DocumentAsset(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     asset_id: uuid.UUID = Field(foreign_key="asset.id", unique=True, index=True)
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    updated_at: datetime = Field(default_factory=_naive_utc_now)
 
     document_type_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
     document_number: str | None = None
@@ -49,9 +49,7 @@ class FinancialAsset(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     asset_id: uuid.UUID = Field(foreign_key="asset.id", unique=True, index=True)
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    updated_at: datetime = Field(default_factory=_naive_utc_now)
 
     institution: str | None = None
     account_number: str | None = None
@@ -68,9 +66,7 @@ class DigitalAsset(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     asset_id: uuid.UUID = Field(foreign_key="asset.id", unique=True, index=True)
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    updated_at: datetime = Field(default_factory=_naive_utc_now)
 
     platform: str | None = None  # e.g. "GitHub", "Adobe"
     license_key: str | None = None

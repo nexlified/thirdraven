@@ -4,6 +4,10 @@ from datetime import UTC, date, datetime
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class PersonObservation(SQLModel, table=True):
     __tablename__ = "person_observation"
 
@@ -16,12 +20,8 @@ class PersonObservation(SQLModel, table=True):
     source: str | None = None  # "conversation" | "social-media" | "email" | etc.
     context: str | None = None  # "personal" | "professional" | "mixed"
     is_sensitive: bool = Field(default=False)
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    created_at: datetime = Field(default_factory=_naive_utc_now)
+    updated_at: datetime = Field(default_factory=_naive_utc_now)
 
 
 class PersonObservationTag(SQLModel, table=True):

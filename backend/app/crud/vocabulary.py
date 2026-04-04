@@ -49,6 +49,20 @@ async def resolve_optional_term_slug(
     return await resolve_term_slug(db, machine_name, slug)
 
 
+async def get_vocabulary_slugs(db: AsyncSession, machine_name: str) -> set[str]:
+    """Return all active term slugs for a vocabulary as a Python set."""
+    vocab = await get_vocabulary_by_machine_name(db, machine_name)
+    if not vocab:
+        return set()
+    result = await db.execute(
+        select(Term.slug).where(
+            Term.vocabulary_id == vocab.id,
+            Term.is_active.is_(True),
+        )
+    )
+    return set(result.scalars().all())
+
+
 # ── Vocabulary CRUD ────────────────────────────────────────────────────────────
 
 

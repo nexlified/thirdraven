@@ -6,6 +6,10 @@ import sqlalchemy as sa
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class User(SQLModel, table=True):
     __tablename__ = "user"
 
@@ -14,9 +18,7 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True, index=True)
     hashed_password: str
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    created_at: datetime = Field(default_factory=_naive_utc_now)
     preferences: dict[str, Any] = Field(
         default_factory=dict,
         sa_column=sa.Column(sa.JSON, nullable=True),

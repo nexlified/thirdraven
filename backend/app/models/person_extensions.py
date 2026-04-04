@@ -4,14 +4,16 @@ from datetime import UTC, date, datetime
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class PersonProfile(SQLModel, table=True):
     __tablename__ = "person_profile"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    updated_at: datetime = Field(default_factory=_naive_utc_now)
 
     middle_name: str | None = None
     prefix_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
@@ -27,9 +29,7 @@ class PersonProfessional(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    updated_at: datetime = Field(default_factory=_naive_utc_now)
 
     occupation_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
     company: str | None = None
@@ -41,9 +41,7 @@ class PersonLocation(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    updated_at: datetime = Field(default_factory=_naive_utc_now)
 
     timezone_id: uuid.UUID | None = Field(default=None, foreign_key="timezone.id")
 
@@ -53,9 +51,7 @@ class PersonContext(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", unique=True, index=True)
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    updated_at: datetime = Field(default_factory=_naive_utc_now)
 
     how_we_met: str | None = None
     first_met_on: date | None = None
@@ -81,9 +77,7 @@ class PersonChannel(SQLModel, table=True):
     value: str
     label: str | None = None  # "work" | "personal" | etc.
     is_primary: bool = Field(default=False)
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    created_at: datetime = Field(default_factory=_naive_utc_now)
 
 
 class PersonAddress(SQLModel, table=True):
@@ -102,6 +96,4 @@ class PersonAddress(SQLModel, table=True):
     lat: float | None = None
     lng: float | None = None
     is_primary: bool = Field(default=False)
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    created_at: datetime = Field(default_factory=_naive_utc_now)

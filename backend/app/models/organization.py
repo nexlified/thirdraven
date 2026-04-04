@@ -4,6 +4,10 @@ from datetime import UTC, date, datetime
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class Organization(SQLModel, table=True):
     __tablename__ = "organization"
 
@@ -22,12 +26,8 @@ class Organization(SQLModel, table=True):
     country_id: uuid.UUID | None = Field(default=None, foreign_key="country.id")
     linkedin_url: str | None = None
     notes: str | None = None
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    created_at: datetime = Field(default_factory=_naive_utc_now)
+    updated_at: datetime = Field(default_factory=_naive_utc_now)
     deleted_at: datetime | None = None
 
     # Household sharing
@@ -48,9 +48,5 @@ class PersonOrganization(SQLModel, table=True):
     is_current: bool = Field(default=True)
     started_on: date | None = None
     ended_on: date | None = None
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    created_at: datetime = Field(default_factory=_naive_utc_now)
+    updated_at: datetime = Field(default_factory=_naive_utc_now)

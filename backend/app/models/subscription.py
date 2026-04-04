@@ -4,6 +4,10 @@ from datetime import UTC, date, datetime
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class Subscription(SQLModel, table=True):
     __tablename__ = "subscription"
 
@@ -27,12 +31,8 @@ class Subscription(SQLModel, table=True):
     url: str | None = None
     notes: str | None = None
     asset_id: uuid.UUID | None = Field(default=None, foreign_key="asset.id")
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    created_at: datetime = Field(default_factory=_naive_utc_now)
+    updated_at: datetime = Field(default_factory=_naive_utc_now)
     deleted_at: datetime | None = None
 
 
@@ -60,6 +60,4 @@ class BillPayment(SQLModel, table=True):
     paid_on: date | None = None
     status: str = "pending"  # pending | paid | overdue | failed
     notes: str | None = None
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    created_at: datetime = Field(default_factory=_naive_utc_now)

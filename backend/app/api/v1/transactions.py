@@ -3,10 +3,12 @@ from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.deps import PaginationParams, get_current_user
+from app.core.transaction_parser import parse_transaction_input
 from app.crud.transaction import (
     create_transaction,
     create_transactions_bulk,
@@ -16,6 +18,7 @@ from app.crud.transaction import (
     soft_delete_transaction,
     update_transaction,
 )
+from app.crud.vocabulary import get_vocabulary_slugs
 from app.models.user import User
 from app.schemas.paginated import Paginated
 from app.schemas.transaction import (
@@ -24,6 +27,12 @@ from app.schemas.transaction import (
     TransactionSummary,
     TransactionUpdate,
 )
+
+
+class QuickParseRequest(BaseModel):
+    input: str
+    currency: str = "INR"
+
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
@@ -67,6 +76,43 @@ async def summary(
     return await get_transaction_summary(
         db, current_user.id, date_from, date_to, currency
     )
+
+
+# IMPORTANT: /parse and /quick-add must be declared before /{transaction_id}
+# to prevent FastAPI from parsing them as UUID parameters.
+@router.post("/parse", response_model=TransactionCreate)
+async def parse_transaction(
+    body: QuickParseRequest,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    expense_slugs = await get_vocabulary_slugs(db, "expense-categories")
+    income_slugs = await get_vocabulary_slugs(db, "income-categories")
+    try:
+        parsed = parse_transaction_input(body.input, expense_slugs, income_slugs)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return TransactionCreate(
+        transaction_type=parsed.transaction_type,
+        amount=parsed.amount,
+        description=parsed.description or parsed.merchant or "",
+        category=parsed.category_slug,
+        merchant=parsed.merchant,
+        transacted_on=parsed.transacted_on,
+        currency=body.currency,
+    )
+
+
+@router.post(
+    "/quick-add", response_model=TransactionPublic, status_code=status.HTTP_201_CREATED
+)
+async def quick_add_transaction(
+    body: QuickParseRequest,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    tx_create = await parse_transaction(body, db, current_user)
+    return await create_transaction(db, current_user.id, tx_create)
 
 
 @router.get("/", response_model=Paginated[TransactionPublic])

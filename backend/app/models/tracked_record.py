@@ -6,6 +6,10 @@ from sqlalchemy import JSON, Column
 from sqlmodel import Field, SQLModel
 
 
+def _naive_utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class TrackedRecord(SQLModel, table=True):
     __tablename__ = "tracked_record"
 
@@ -37,9 +41,5 @@ class TrackedRecord(SQLModel, table=True):
 
     notes: str | None = None
     deleted_at: datetime | None = None
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
+    created_at: datetime = Field(default_factory=_naive_utc_now)
+    updated_at: datetime = Field(default_factory=_naive_utc_now)
