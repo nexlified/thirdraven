@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { AppLayout } from "../components/AppLayout";
 import QuickAddTransaction from "../components/QuickAddTransaction";
 import { listTerms } from "../api/vocabularies";
@@ -319,7 +319,9 @@ export function Transactions() {
         setIncomeTerms(income.map((t) => ({ id: t.id, name: t.name, slug: t.slug })));
         setPaymentTerms(payment.map((t) => ({ id: t.id, name: t.name, slug: t.slug })));
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("Failed to load vocabulary terms:", err);
+      });
   }, []);
 
   // Load transactions and summary on filter/page change
@@ -477,8 +479,8 @@ export function Transactions() {
     setImportPreview(null);
   }
 
-  const allCategoryTerms = [...expenseTerms, ...incomeTerms].filter(
-    (t, i, arr) => arr.findIndex((x) => x.slug === t.slug) === i
+  const allCategoryTerms = Array.from(
+    new Map([...expenseTerms, ...incomeTerms].map((t) => [t.slug, t])).values()
   );
 
   return (
@@ -691,8 +693,8 @@ export function Transactions() {
             </thead>
             <tbody>
               {items.map((tx) => (
-                <>
-                  <tr key={tx.id}>
+                <Fragment key={tx.id}>
+                  <tr>
                     <td className="person-date">{formatDate(tx.transacted_on)}</td>
                     <td>
                       <span className="task-badge">{tx.transaction_type}</span>
@@ -734,7 +736,7 @@ export function Transactions() {
                     </td>
                   </tr>
                   {editingId === tx.id && (
-                    <tr key={`${tx.id}-edit`}>
+                    <tr>
                       <td colSpan={6} style={{ padding: 0 }}>
                         <TxForm
                           form={editForm}
@@ -751,7 +753,7 @@ export function Transactions() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
