@@ -34,6 +34,9 @@ include = ["app*"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "integration: marks tests requiring a live database (run with --run-integration)",
+]
 
 [dependency-groups]
 dev = [
