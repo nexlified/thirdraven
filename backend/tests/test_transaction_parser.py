@@ -155,8 +155,9 @@ def test_default_today_used_when_not_provided():
     """When today is not supplied, transacted_on is date.today()."""
     from datetime import date as _date
 
+    today = _date.today()
     result = parse_transaction_input("100 food", EXPENSE_SLUGS, INCOME_SLUGS)
-    assert result.transacted_on == _date.today()
+    assert result.transacted_on == today
 
 
 def test_income_slug_takes_priority_over_expense():
