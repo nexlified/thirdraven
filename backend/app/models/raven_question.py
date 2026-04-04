@@ -16,4 +16,4 @@ class RavenQuestion(SQLModel, table=True):
     status: str = Field(default="pending")  # "pending" | "answered"
     answer: str | None = None
     answered_at: datetime | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))

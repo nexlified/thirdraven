@@ -21,5 +21,5 @@ class Interaction(SQLModel, table=True):
     metadata_: dict[str, Any] | None = Field(
         default=None, sa_column=Column("metadata", JSON, nullable=True)
     )
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))

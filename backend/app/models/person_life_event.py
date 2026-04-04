@@ -19,5 +19,5 @@ class PersonSignificantDate(SQLModel, table=True):
     year: int | None = None
     recurs_annually: bool = Field(default=True)
     notes: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))

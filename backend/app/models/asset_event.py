@@ -18,4 +18,4 @@ class AssetEvent(SQLModel, table=True):
     cost: float | None = None
     currency: str | None = None  # ISO 4217
     vendor: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))

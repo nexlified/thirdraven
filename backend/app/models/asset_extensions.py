@@ -9,7 +9,7 @@ class PhysicalAsset(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     asset_id: uuid.UUID = Field(foreign_key="asset.id", unique=True, index=True)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
 
     brand: str | None = None
     model_number: str | None = None
@@ -29,7 +29,7 @@ class DocumentAsset(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     asset_id: uuid.UUID = Field(foreign_key="asset.id", unique=True, index=True)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
 
     document_type_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
     document_number: str | None = None
@@ -45,7 +45,7 @@ class FinancialAsset(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     asset_id: uuid.UUID = Field(foreign_key="asset.id", unique=True, index=True)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
 
     institution: str | None = None
     account_number: str | None = None
@@ -62,7 +62,7 @@ class DigitalAsset(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     asset_id: uuid.UUID = Field(foreign_key="asset.id", unique=True, index=True)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
 
     platform: str | None = None  # e.g. "GitHub", "Adobe"
     license_key: str | None = None

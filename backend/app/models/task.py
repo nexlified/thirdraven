@@ -21,8 +21,8 @@ class Task(SQLModel, table=True):
         default=None, foreign_key="subscription.id"
     )
     event_id: uuid.UUID | None = Field(default=None, foreign_key="event.id")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
     deleted_at: datetime | None = None
 
 

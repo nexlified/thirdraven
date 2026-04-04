@@ -16,8 +16,8 @@ class Event(SQLModel, table=True):
     occurred_on: date | None = None
     location: str | None = None
     notes: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
 
 
 class EventPerson(SQLModel, table=True):
@@ -27,4 +27,4 @@ class EventPerson(SQLModel, table=True):
     event_id: uuid.UUID = Field(foreign_key="event.id", index=True)
     person_id: uuid.UUID = Field(foreign_key="person.id", index=True)
     role: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
