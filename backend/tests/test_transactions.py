@@ -16,12 +16,15 @@ from app.schemas.transaction import (
     TransactionPublic,
     TransactionSummary,
 )
+from app.schemas.transaction_item import TransactionItemPublic
 from app.schemas.vocabulary import TermSlim
 
 OWNER_ID = uuid.uuid4()
 TX_ID = uuid.uuid4()
 CAT_TERM_ID = uuid.uuid4()
 PM_TERM_ID = uuid.uuid4()
+ITEM_ID = uuid.uuid4()
+PRODUCT_ID = uuid.uuid4()
 
 FAKE_USER = User(
     id=OWNER_ID,
@@ -59,6 +62,28 @@ def make_transaction(**kwargs) -> TransactionPublic:
     )
     defaults.update(kwargs)
     return TransactionPublic(**defaults)
+
+
+def make_transaction_item(**kwargs) -> TransactionItemPublic:
+    defaults = dict(
+        id=ITEM_ID,
+        transaction_id=TX_ID,
+        product_id=PRODUCT_ID,
+        product=None,
+        raw_name="AMUL MILK 1L",
+        quantity=1.0,
+        unit="L",
+        unit_price=65.0,
+        total_price=65.0,
+        currency="INR",
+        discount=0.0,
+        store_name="DMart",
+        import_batch_id=None,
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+    defaults.update(kwargs)
+    return TransactionItemPublic(**defaults)
 
 
 @pytest.fixture
@@ -631,3 +656,149 @@ def test_quick_add_transaction_success(app_client):
     body = resp.json()
     assert body["transaction_type"] == "expense"
     assert body["amount"] == 500.0
+
+
+# -- /transactions/{id}/items -------------------------------------------------
+
+
+def test_create_transaction_item_success(app_client):
+    item = make_transaction_item()
+    with patch(
+        "app.api.v1.transactions.create_transaction_item",
+        new=AsyncMock(return_value=item),
+    ):
+        resp = app_client.post(
+            f"/api/v1/transactions/{TX_ID}/items/",
+            json={
+                "raw_name": "AMUL MILK 1L",
+                "quantity": 1,
+                "unit": "L",
+                "unit_price": 65,
+                "total_price": 65,
+            },
+        )
+    assert resp.status_code == 201
+    assert resp.json()["id"] == str(ITEM_ID)
+
+
+def test_create_transaction_item_not_found(app_client):
+    with patch(
+        "app.api.v1.transactions.create_transaction_item",
+        new=AsyncMock(return_value=None),
+    ):
+        resp = app_client.post(
+            f"/api/v1/transactions/{uuid.uuid4()}/items/",
+            json={
+                "raw_name": "AMUL MILK 1L",
+                "quantity": 1,
+                "unit_price": 65,
+                "total_price": 65,
+            },
+        )
+    assert resp.status_code == 404
+
+
+def test_bulk_create_transaction_items_success(app_client):
+    item = make_transaction_item()
+    with patch(
+        "app.api.v1.transactions.create_transaction_items_bulk",
+        new=AsyncMock(return_value=[item]),
+    ):
+        resp = app_client.post(
+            f"/api/v1/transactions/{TX_ID}/items/bulk",
+            json=[
+                {
+                    "raw_name": "AMUL MILK 1L",
+                    "quantity": 1,
+                    "unit_price": 65,
+                    "total_price": 65,
+                }
+            ],
+        )
+    assert resp.status_code == 201
+    assert len(resp.json()) == 1
+
+
+def test_bulk_create_transaction_items_not_found(app_client):
+    with patch(
+        "app.api.v1.transactions.create_transaction_items_bulk",
+        new=AsyncMock(return_value=None),
+    ):
+        resp = app_client.post(
+            f"/api/v1/transactions/{uuid.uuid4()}/items/bulk",
+            json=[
+                {
+                    "raw_name": "AMUL MILK 1L",
+                    "quantity": 1,
+                    "unit_price": 65,
+                    "total_price": 65,
+                }
+            ],
+        )
+    assert resp.status_code == 404
+
+
+def test_list_transaction_items_success(app_client):
+    item = make_transaction_item()
+    with patch(
+        "app.api.v1.transactions.list_transaction_items",
+        new=AsyncMock(return_value=[item]),
+    ):
+        resp = app_client.get(f"/api/v1/transactions/{TX_ID}/items/")
+    assert resp.status_code == 200
+    assert len(resp.json()) == 1
+
+
+def test_list_transaction_items_not_found(app_client):
+    with patch(
+        "app.api.v1.transactions.list_transaction_items",
+        new=AsyncMock(return_value=None),
+    ):
+        resp = app_client.get(f"/api/v1/transactions/{uuid.uuid4()}/items/")
+    assert resp.status_code == 404
+
+
+def test_patch_transaction_item_success(app_client):
+    item = make_transaction_item(quantity=2.0, total_price=130.0)
+    with patch(
+        "app.api.v1.transactions.update_transaction_item",
+        new=AsyncMock(return_value=item),
+    ):
+        resp = app_client.patch(
+            f"/api/v1/transactions/{TX_ID}/items/{ITEM_ID}",
+            json={"quantity": 2.0, "total_price": 130.0},
+        )
+    assert resp.status_code == 200
+    assert resp.json()["quantity"] == 2.0
+
+
+def test_patch_transaction_item_not_found(app_client):
+    with patch(
+        "app.api.v1.transactions.update_transaction_item",
+        new=AsyncMock(return_value=None),
+    ):
+        resp = app_client.patch(
+            f"/api/v1/transactions/{TX_ID}/items/{uuid.uuid4()}",
+            json={"quantity": 2.0},
+        )
+    assert resp.status_code == 404
+
+
+def test_delete_transaction_item_success(app_client):
+    with patch(
+        "app.api.v1.transactions.delete_transaction_item",
+        new=AsyncMock(return_value=True),
+    ):
+        resp = app_client.delete(f"/api/v1/transactions/{TX_ID}/items/{ITEM_ID}")
+    assert resp.status_code == 204
+
+
+def test_delete_transaction_item_not_found(app_client):
+    with patch(
+        "app.api.v1.transactions.delete_transaction_item",
+        new=AsyncMock(return_value=False),
+    ):
+        resp = app_client.delete(
+            f"/api/v1/transactions/{TX_ID}/items/{uuid.uuid4()}"
+        )
+    assert resp.status_code == 404

@@ -18,6 +18,13 @@ from app.crud.transaction import (
     soft_delete_transaction,
     update_transaction,
 )
+from app.crud.transaction_item import (
+    create_transaction_item,
+    create_transaction_items_bulk,
+    delete_transaction_item,
+    list_transaction_items,
+    update_transaction_item,
+)
 from app.crud.vocabulary import get_vocabulary_slugs
 from app.models.user import User
 from app.schemas.paginated import Paginated
@@ -26,6 +33,11 @@ from app.schemas.transaction import (
     TransactionPublic,
     TransactionSummary,
     TransactionUpdate,
+)
+from app.schemas.transaction_item import (
+    TransactionItemCreate,
+    TransactionItemPublic,
+    TransactionItemUpdate,
 )
 
 
@@ -180,3 +192,78 @@ async def delete(
     tx = await soft_delete_transaction(db, transaction_id, current_user.id)
     if not tx:
         raise HTTPException(status_code=404, detail="Transaction not found")
+
+
+@router.post(
+    "/{transaction_id}/items/",
+    response_model=TransactionItemPublic,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_item(
+    transaction_id: uuid.UUID,
+    data: TransactionItemCreate,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    item = await create_transaction_item(db, current_user.id, transaction_id, data)
+    if not item:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return item
+
+
+@router.post(
+    "/{transaction_id}/items/bulk",
+    response_model=list[TransactionItemPublic],
+    status_code=status.HTTP_201_CREATED,
+)
+async def bulk_create_items(
+    transaction_id: uuid.UUID,
+    items: list[TransactionItemCreate],
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    result = await create_transaction_items_bulk(db, current_user.id, transaction_id, items)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return result
+
+
+@router.get("/{transaction_id}/items/", response_model=list[TransactionItemPublic])
+async def list_items(
+    transaction_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    items = await list_transaction_items(db, current_user.id, transaction_id)
+    if items is None:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return items
+
+
+@router.patch("/{transaction_id}/items/{item_id}", response_model=TransactionItemPublic)
+async def patch_item(
+    transaction_id: uuid.UUID,
+    item_id: uuid.UUID,
+    data: TransactionItemUpdate,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    _ = transaction_id
+    item = await update_transaction_item(db, item_id, current_user.id, data)
+    if not item:
+        raise HTTPException(status_code=404, detail="Transaction item not found")
+    return item
+
+
+@router.delete("/{transaction_id}/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_item(
+    transaction_id: uuid.UUID,
+    item_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    _ = transaction_id
+    deleted = await delete_transaction_item(db, item_id, current_user.id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Transaction item not found")
+
