@@ -95,9 +95,7 @@ async def parse_transaction(
     return TransactionCreate(
         transaction_type=parsed.transaction_type,
         amount=parsed.amount,
-        description=parsed.description
-        if parsed.description
-        else (parsed.merchant if parsed.merchant is not None else body.input),
+        description=parsed.description or parsed.merchant or "",
         category=parsed.category_slug,
         merchant=parsed.merchant,
         transacted_on=parsed.transacted_on,
