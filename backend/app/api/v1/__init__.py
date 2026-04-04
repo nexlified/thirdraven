@@ -9,6 +9,7 @@ from app.api.v1.channels import router as channels_router
 from app.api.v1.communications import router as communications_router
 from app.api.v1.documents import router as documents_router
 from app.api.v1.events import event_persons_router, events_router
+from app.api.v1.finances import router as finances_router
 from app.api.v1.followups import router as followups_router
 from app.api.v1.goals import router as goals_router
 from app.api.v1.households import router as households_router
@@ -74,6 +75,7 @@ api_router.include_router(vocabularies_router)
 api_router.include_router(iso_reference_router)
 api_router.include_router(subscriptions_router)
 api_router.include_router(transactions_router)
+api_router.include_router(finances_router)
 api_router.include_router(budgets_router)
 api_router.include_router(notes_router)
 api_router.include_router(tasks_router)
