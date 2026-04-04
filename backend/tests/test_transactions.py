@@ -798,7 +798,5 @@ def test_delete_transaction_item_not_found(app_client):
         "app.api.v1.transactions.delete_transaction_item",
         new=AsyncMock(return_value=False),
     ):
-        resp = app_client.delete(
-            f"/api/v1/transactions/{TX_ID}/items/{uuid.uuid4()}"
-        )
+        resp = app_client.delete(f"/api/v1/transactions/{TX_ID}/items/{uuid.uuid4()}")
     assert resp.status_code == 404

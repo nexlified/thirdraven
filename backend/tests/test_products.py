@@ -211,9 +211,7 @@ def test_patch_product_not_found(app_client):
         "app.api.v1.products.update_product",
         new=AsyncMock(return_value=None),
     ):
-        resp = app_client.patch(
-            f"/api/v1/products/{uuid.uuid4()}", json={"brand": "X"}
-        )
+        resp = app_client.patch(f"/api/v1/products/{uuid.uuid4()}", json={"brand": "X"})
     assert resp.status_code == 404
 
 

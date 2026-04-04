@@ -28,4 +28,3 @@ class TransactionItem(SQLModel, table=True):
     import_batch_id: str | None = None
     created_at: datetime = Field(default_factory=_naive_utc_now)
     updated_at: datetime = Field(default_factory=_naive_utc_now)
-

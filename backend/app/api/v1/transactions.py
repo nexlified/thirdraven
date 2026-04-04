@@ -222,7 +222,9 @@ async def bulk_create_items(
     db: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    result = await create_transaction_items_bulk(db, current_user.id, transaction_id, items)
+    result = await create_transaction_items_bulk(
+        db, current_user.id, transaction_id, items
+    )
     if result is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
     return result
@@ -255,7 +257,9 @@ async def patch_item(
     return item
 
 
-@router.delete("/{transaction_id}/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{transaction_id}/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT
+)
 async def delete_item(
     transaction_id: uuid.UUID,
     item_id: uuid.UUID,
@@ -266,4 +270,3 @@ async def delete_item(
     deleted = await delete_transaction_item(db, item_id, current_user.id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Transaction item not found")
-

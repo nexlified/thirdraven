@@ -15,9 +15,7 @@ class Product(SQLModel, table=True):
     owner_id: uuid.UUID = Field(foreign_key="user.id", index=True, nullable=False)
     name: str
     brand: str | None = None
-    category_term_id: uuid.UUID | None = Field(
-        default=None, foreign_key="term.id"
-    )
+    category_term_id: uuid.UUID | None = Field(default=None, foreign_key="term.id")
     unit: str | None = None
     barcode: str | None = None
     priceraven_product_id: str | None = None
