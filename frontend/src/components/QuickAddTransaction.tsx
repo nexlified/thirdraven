@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { quickAddTransaction, type TransactionPublic } from "../api/transactions";
 
 interface QuickAddTransactionProps {
@@ -38,10 +39,10 @@ export default function QuickAddTransaction({
 
     try {
       const tx = await quickAddTransaction(trimmed, defaultCurrency);
-      const symbol = tx.transaction_type === "income" ? "+" : "-";
+      const symbol = tx.transaction_type === "income" ? "+" : "−";
       const category = tx.category?.name ?? "";
       setSuccessMsg(
-        `${symbol} ${tx.currency} ${tx.amount.toFixed(0)}${category ? ` - ${category}` : ""}`
+        `${symbol} ${tx.currency} ${tx.amount.toFixed(0)}${category ? ` — ${category}` : ""}`
       );
       setInput("");
       onSuccess?.(tx);

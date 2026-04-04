@@ -32,7 +32,9 @@ async function request<T>(
     try {
       const err = await res.json();
       message = err.detail ?? message;
-    } catch {}
+    } catch {
+      // Ignore non-JSON error responses and fall back to the HTTP status message.
+    }
     throw new Error(message);
   }
 
