@@ -1,5 +1,15 @@
 const BASE_URL = "http://localhost:8000/api/v1";
 
+export function buildQuery(params: Record<string, unknown>): string {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== "") {
+      q.set(k, String(v));
+    }
+  }
+  return q.toString();
+}
+
 function getToken(): string | null {
   return localStorage.getItem("access_token");
 }

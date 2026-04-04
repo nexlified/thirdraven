@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { Paginated } from "./persons";
+import type { Paginated } from "./types";
 
 export interface ReminderPublic {
   id: string;

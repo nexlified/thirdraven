@@ -1,5 +1,6 @@
 import { api } from "./client";
-import type { Paginated, PersonSlim, TermSlim } from "./persons";
+import type { PersonSlim } from "./persons";
+import type { Paginated, TermSlim } from "./types";
 
 export interface EventPublic {
   id: string;

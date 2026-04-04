@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { Paginated, TermSlim } from "./persons";
+import type { Paginated, TermSlim } from "./types";
 
 export interface SubscriptionPublicRead {
   id: string;
