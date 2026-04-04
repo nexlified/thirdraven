@@ -9,8 +9,12 @@ class Person(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id", index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
+    )
     deleted_at: datetime | None = None
 
     # Identity

@@ -19,7 +19,9 @@ class Vocabulary(SQLModel, table=True):
     source_type: str = Field(default="internal")
     external_provider: str | None = None
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
+    )
 
 
 class Term(SQLModel, table=True):
@@ -39,7 +41,9 @@ class Term(SQLModel, table=True):
     )
     reverse_slug: str | None = None
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
+    )
 
 
 class PersonTag(SQLModel, table=True):

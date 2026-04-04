@@ -16,9 +16,7 @@ async def db():
     'another operation is in progress' errors when rolling back between tests.
     The session rolls back after every test so no data is committed.
     """
-    engine = create_async_engine(
-        settings.database_url, echo=False, poolclass=NullPool
-    )
+    engine = create_async_engine(settings.database_url, echo=False, poolclass=NullPool)
     try:
         async with AsyncSession(engine, expire_on_commit=False) as session:
             yield session

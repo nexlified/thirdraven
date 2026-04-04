@@ -11,4 +11,6 @@ class ContactRelationship(SQLModel, table=True):
     from_contact_id: uuid.UUID = Field(foreign_key="contact.id", index=True)
     to_contact_id: uuid.UUID = Field(foreign_key="contact.id", index=True)
     label: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
+    )

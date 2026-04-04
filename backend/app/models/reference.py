@@ -11,4 +11,6 @@ class PersonTerm(SQLModel, table=True):
     person_id: uuid.UUID = Field(foreign_key="person.id", index=True)
     term_id: uuid.UUID = Field(foreign_key="term.id", index=True)
     context: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
+    )

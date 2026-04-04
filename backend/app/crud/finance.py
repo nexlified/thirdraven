@@ -15,9 +15,7 @@ from app.models.vocabulary import Term
 from app.schemas.finance import AssetSummaryItem, FinanceOverview, LoanSummaryItem
 
 
-async def _resolve_term_name(
-    db: AsyncSession, term_id: uuid.UUID | None
-) -> str | None:
+async def _resolve_term_name(db: AsyncSession, term_id: uuid.UUID | None) -> str | None:
     if term_id is None:
         return None
     result = await db.execute(select(Term).where(Term.id == term_id))

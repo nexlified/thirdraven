@@ -198,9 +198,7 @@ def test_overview_custom_currency(app_client):
         "app.api.v1.finances.get_finance_overview",
         new=AsyncMock(return_value=ov),
     ) as mock_fn:
-        resp = app_client.get(
-            "/api/v1/finances/overview", params={"currency": "USD"}
-        )
+        resp = app_client.get("/api/v1/finances/overview", params={"currency": "USD"})
     assert resp.status_code == 200
     # currency is passed as positional arg[2]
     assert mock_fn.call_args.args[2] == "USD"
