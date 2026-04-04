@@ -4,6 +4,7 @@ from app.api.v1.addresses import router as addresses_router
 from app.api.v1.asset_extensions import router as asset_extensions_router
 from app.api.v1.assets import router as assets_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.budgets import router as budgets_router
 from app.api.v1.channels import router as channels_router
 from app.api.v1.communications import router as communications_router
 from app.api.v1.documents import router as documents_router
@@ -39,8 +40,8 @@ from app.api.v1.reminders import (
 )
 from app.api.v1.renewals import router as renewals_router
 from app.api.v1.subscriptions import router as subscriptions_router
-from app.api.v1.transactions import router as transactions_router
 from app.api.v1.tasks import router as tasks_router
+from app.api.v1.transactions import router as transactions_router
 from app.api.v1.vocabularies import router as vocabularies_router
 
 api_router = APIRouter()
@@ -73,6 +74,7 @@ api_router.include_router(vocabularies_router)
 api_router.include_router(iso_reference_router)
 api_router.include_router(subscriptions_router)
 api_router.include_router(transactions_router)
+api_router.include_router(budgets_router)
 api_router.include_router(notes_router)
 api_router.include_router(tasks_router)
 api_router.include_router(records_router)
