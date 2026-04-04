@@ -27,6 +27,7 @@ from app.api.v1.notes import router as notes_router
 from app.api.v1.observations import router as observations_router
 from app.api.v1.organizations import orgs_router, person_orgs_router
 from app.api.v1.persons import router as persons_router
+from app.api.v1.products import router as products_router
 from app.api.v1.raven_logs import router as raven_logs_router
 from app.api.v1.raven_questions import router as raven_questions_router
 from app.api.v1.records import router as records_router
@@ -75,6 +76,7 @@ api_router.include_router(vocabularies_router)
 api_router.include_router(iso_reference_router)
 api_router.include_router(subscriptions_router)
 api_router.include_router(transactions_router)
+api_router.include_router(products_router)
 api_router.include_router(finances_router)
 api_router.include_router(budgets_router)
 api_router.include_router(notes_router)
