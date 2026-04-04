@@ -39,6 +39,7 @@ from app.api.v1.reminders import (
 )
 from app.api.v1.renewals import router as renewals_router
 from app.api.v1.subscriptions import router as subscriptions_router
+from app.api.v1.transactions import router as transactions_router
 from app.api.v1.tasks import router as tasks_router
 from app.api.v1.vocabularies import router as vocabularies_router
 
@@ -71,6 +72,7 @@ api_router.include_router(event_persons_router)
 api_router.include_router(vocabularies_router)
 api_router.include_router(iso_reference_router)
 api_router.include_router(subscriptions_router)
+api_router.include_router(transactions_router)
 api_router.include_router(notes_router)
 api_router.include_router(tasks_router)
 api_router.include_router(records_router)

@@ -1,0 +1,122 @@
+import uuid
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_session
+from app.core.deps import PaginationParams, get_current_user
+from app.crud.transaction import (
+    create_transaction,
+    create_transactions_bulk,
+    get_transaction_public,
+    list_transactions,
+    soft_delete_transaction,
+    update_transaction,
+)
+from app.models.user import User
+from app.schemas.paginated import Paginated
+from app.schemas.transaction import (
+    TransactionCreate,
+    TransactionPublic,
+    TransactionUpdate,
+)
+
+router = APIRouter(prefix="/transactions", tags=["transactions"])
+
+
+@router.post("/", response_model=TransactionPublic, status_code=status.HTTP_201_CREATED)
+async def create(
+    data: TransactionCreate,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    return await create_transaction(db, current_user.id, data)
+
+
+@router.post(
+    "/bulk",
+    response_model=list[TransactionPublic],
+    status_code=status.HTTP_201_CREATED,
+)
+async def bulk_create(
+    items: list[TransactionCreate],
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    return await create_transactions_bulk(db, current_user.id, items)
+
+
+# IMPORTANT: /summary must be declared before /{id} to prevent FastAPI
+# from parsing "summary" as a UUID parameter.
+@router.get("/summary")
+async def summary():
+    # Placeholder — implemented in BE-05
+    raise HTTPException(status_code=501, detail="Not implemented")
+
+
+@router.get("/", response_model=Paginated[TransactionPublic])
+async def list_all(
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    pagination: Annotated[PaginationParams, Depends(PaginationParams)],
+    transaction_type: str | None = None,
+    category: str | None = None,
+    payment_method: str | None = None,
+    asset_id: uuid.UUID | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    search: str | None = None,
+):
+    items, total = await list_transactions(
+        db,
+        current_user.id,
+        skip=pagination.skip,
+        limit=pagination.limit,
+        transaction_type=transaction_type,
+        category_slug=category,
+        payment_method_slug=payment_method,
+        asset_id=asset_id,
+        date_from=date_from,
+        date_to=date_to,
+        search=search,
+    )
+    return Paginated(
+        items=items, total=total, skip=pagination.skip, limit=pagination.limit
+    )
+
+
+@router.get("/{transaction_id}", response_model=TransactionPublic)
+async def get_one(
+    transaction_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    tx = await get_transaction_public(db, transaction_id, current_user.id)
+    if not tx:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return tx
+
+
+@router.patch("/{transaction_id}", response_model=TransactionPublic)
+async def patch(
+    transaction_id: uuid.UUID,
+    data: TransactionUpdate,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    tx = await update_transaction(db, transaction_id, current_user.id, data)
+    if not tx:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return tx
+
+
+@router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete(
+    transaction_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    tx = await soft_delete_transaction(db, transaction_id, current_user.id)
+    if not tx:
+        raise HTTPException(status_code=404, detail="Transaction not found")
