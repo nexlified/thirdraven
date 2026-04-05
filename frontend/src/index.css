@@ -17,6 +17,7 @@
   --accent-border: rgba(124, 92, 252, 0.35);
   --danger: #f87171;
   --danger-subtle: rgba(248, 113, 113, 0.1);
+  --success: #4ade80;
   --radius: 8px;
   --radius-lg: 12px;
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
@@ -1796,9 +1797,9 @@ a:hover {
   line-height: 1.2;
 }
 
-.cashflow-income { color: #4ade80; }
+.cashflow-income { color: var(--success); }
 .cashflow-expense { color: var(--danger); }
-.cashflow-positive { color: #4ade80; }
+.cashflow-positive { color: var(--success); }
 .cashflow-negative { color: var(--danger); }
 
 .savings-rate {
@@ -1899,22 +1900,23 @@ a:hover {
   background: var(--danger);
 }
 
-.budget-amounts {
+.budget-amounts,
+.text-danger,
+.text-muted {
   font-size: 0.8rem;
-  color: var(--text-muted);
   white-space: nowrap;
+}
+
+.budget-amounts {
+  color: var(--text-muted);
 }
 
 .text-danger {
   color: var(--danger);
-  font-size: 0.8rem;
-  white-space: nowrap;
 }
 
 .text-muted {
   color: var(--text-muted);
-  font-size: 0.8rem;
-  white-space: nowrap;
 }
 
 /* Loans table inside finance page */
@@ -1925,7 +1927,7 @@ a:hover {
 
 .badge-lent {
   background: rgba(74, 222, 128, 0.1);
-  color: #4ade80;
+  color: var(--success);
   border: 1px solid rgba(74, 222, 128, 0.25);
 }
 

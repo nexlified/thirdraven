@@ -104,26 +104,21 @@ export function Finances() {
                 ))}
                 {overview &&
                   Object.entries(overview.total_asset_value_by_currency).map(
-                    ([cur, total]) => (
-                      <div key={`total-${cur}`} className="asset-card asset-card-total">
-                        <span className="asset-card-name">Total</span>
-                        <span className="asset-card-balance">{fmt(total, cur)}</span>
-                        <span className="asset-card-type">
-                          across{" "}
-                          {
-                            overview.financial_assets.filter(
-                              (a) => (a.currency ?? currency) === cur,
-                            ).length
-                          }{" "}
-                          account
-                          {overview.financial_assets.filter(
-                            (a) => (a.currency ?? currency) === cur,
-                          ).length !== 1
-                            ? "s"
-                            : ""}
-                        </span>
-                      </div>
-                    ),
+                    ([cur, total]) => {
+                      const matchingAssets = overview.financial_assets.filter(
+                        (a) => (a.currency ?? currency) === cur,
+                      );
+                      return (
+                        <div key={`total-${cur}`} className="asset-card asset-card-total">
+                          <span className="asset-card-name">Total</span>
+                          <span className="asset-card-balance">{fmt(total, cur)}</span>
+                          <span className="asset-card-type">
+                            across {matchingAssets.length} account
+                            {matchingAssets.length !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                      );
+                    },
                   )}
               </div>
             ) : (
@@ -189,7 +184,7 @@ export function Finances() {
               <h3 className="finance-section-title">Spending by Category</h3>
               <div className="category-bars">
                 {overview.top_expense_categories.map((cat) => {
-                  const maxPct = overview.top_expense_categories[0]?.percentage ?? 1;
+                  const maxPct = overview.top_expense_categories[0].percentage;
                   const barWidth = `${(cat.percentage / maxPct) * 100}%`;
                   return (
                     <div key={cat.category_slug} className="category-bar-row">
