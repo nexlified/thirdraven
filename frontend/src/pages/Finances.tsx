@@ -52,7 +52,22 @@ export function Finances() {
 
   function formatDueDate(dateStr: string | null): string {
     if (!dateStr) return "—";
-    const d = new Date(dateStr);
+
+    let d: Date;
+    const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+
+    if (dateOnlyMatch) {
+      const [, yearPart, monthPart, dayPart] = dateOnlyMatch;
+      d = new Date(
+        Number(yearPart),
+        Number(monthPart) - 1,
+        Number(dayPart),
+      );
+    } else {
+      d = new Date(dateStr);
+    }
+
+    if (isNaN(d.getTime())) return "—";
     return d.toLocaleDateString("en-IN", { month: "short", day: "numeric" });
   }
 
