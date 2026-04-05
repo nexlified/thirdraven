@@ -102,24 +102,23 @@ export function Finances() {
                     </span>
                   </div>
                 ))}
-                {overview &&
-                  Object.entries(overview.total_asset_value_by_currency).map(
-                    ([cur, total]) => {
-                      const matchingAssets = overview.financial_assets.filter(
-                        (a) => (a.currency ?? currency) === cur,
-                      );
-                      return (
-                        <div key={`total-${cur}`} className="asset-card asset-card-total">
-                          <span className="asset-card-name">Total</span>
-                          <span className="asset-card-balance">{fmt(total, cur)}</span>
-                          <span className="asset-card-type">
-                            across {matchingAssets.length} account
-                            {matchingAssets.length !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-                      );
-                    },
-                  )}
+                {Object.entries(overview.total_asset_value_by_currency).map(
+                  ([cur, total]) => {
+                    const matchingAssets = overview.financial_assets.filter(
+                      (a) => (a.currency ?? currency) === cur,
+                    );
+                    return (
+                      <div key={`total-${cur}`} className="asset-card asset-card-total">
+                        <span className="asset-card-name">Total</span>
+                        <span className="asset-card-balance">{fmt(total, cur)}</span>
+                        <span className="asset-card-type">
+                          across {matchingAssets.length} account
+                          {matchingAssets.length !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                    );
+                  },
+                )}
               </div>
             ) : (
               <div className="empty-state">
