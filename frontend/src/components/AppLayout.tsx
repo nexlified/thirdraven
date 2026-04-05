@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { label: "Tasks", icon: "◫", path: "/tasks" },
   { label: "Notes", icon: "○", path: "/notes" },
   { label: "Transactions", icon: "₹", path: "/transactions" },
+  { label: "Finances", icon: "◈", path: "/finances" },
   { label: "Subscriptions", icon: "◉", path: "/subscriptions" },
   { label: "Loans", icon: "◎", path: "/loans" },
   { label: "Reminders", icon: "◷", path: "/reminders" },
