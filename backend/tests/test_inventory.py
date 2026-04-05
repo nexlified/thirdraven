@@ -257,7 +257,6 @@ def test_days_until_depletion_none_when_no_date():
 
 
 def test_days_until_depletion_when_date_set():
-    future_date = date.today()
     from datetime import timedelta
 
     future_date = date.today() + timedelta(days=5)

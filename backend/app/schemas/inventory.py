@@ -42,12 +42,12 @@ class InventoryProfilePublic(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[misc]  # Pydantic v2 computed_field on property
     @property
     def is_low_stock(self) -> bool:
         return self.current_stock <= self.reorder_threshold
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[misc]  # Pydantic v2 computed_field on property
     @property
     def days_until_depletion(self) -> int | None:
         if self.estimated_depletion_date is None:

@@ -87,12 +87,6 @@ async def create_inventory_profile(
             status_code=409, detail="Inventory profile already exists for this product"
         )
 
-    if data.typical_monthly_usage > 0 and data.current_stock > 0:
-        days = int(data.current_stock / (data.typical_monthly_usage / 30))
-        depletion_date: date | None = date.today() + timedelta(days=days)
-    else:
-        depletion_date = None
-
     row = InventoryProfile(
         owner_id=owner_id,
         product_id=product_id,
@@ -102,10 +96,10 @@ async def create_inventory_profile(
         typical_monthly_usage=data.typical_monthly_usage,
         current_stock=data.current_stock,
         last_restocked_on=data.last_restocked_on,
-        estimated_depletion_date=depletion_date,
         preferred_source=data.preferred_source,
         notes=data.notes,
     )
+    row.estimated_depletion_date = _compute_depletion_date(row)
     db.add(row)
     await db.commit()
     await db.refresh(row)
@@ -281,6 +275,7 @@ async def check_and_trigger_reorder(
             list_id=shopping_list.id,
             product_id=product_id,
             name=product.name,
+            # Suggest one month's worth as the restock quantity (per spec)
             quantity=profile.typical_monthly_usage,
             unit=profile.restock_unit,
             estimated_price=estimated_price,
