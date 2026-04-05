@@ -20,6 +20,7 @@ import { Loans } from "./pages/Loans";
 import { Reminders } from "./pages/Reminders";
 import { Transactions } from "./pages/Transactions";
 import { Finances } from "./pages/Finances";
+import { Budgets } from "./pages/Budgets";
 
 export default function App() {
   return (
@@ -147,6 +148,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Finances />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/budgets"
+            element={
+              <ProtectedRoute>
+                <Budgets />
               </ProtectedRoute>
             }
           />
