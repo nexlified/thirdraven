@@ -7,6 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.deps import PaginationParams, get_current_user
+from app.crud.inventory import (
+    create_inventory_profile,
+    get_inventory_profile,
+    update_inventory_profile,
+)
 from app.crud.product import (
     create_product,
     get_product_public,
@@ -15,6 +20,11 @@ from app.crud.product import (
     update_product,
 )
 from app.models.user import User
+from app.schemas.inventory import (
+    InventoryProfileCreate,
+    InventoryProfilePublic,
+    InventoryProfileUpdate,
+)
 from app.schemas.paginated import Paginated
 from app.schemas.product import ProductCreate, ProductPublic, ProductUpdate
 
@@ -114,3 +124,45 @@ async def get_items(
         skip=pagination.skip,
         limit=pagination.limit,
     )
+
+
+# ── Inventory sub-routes ──────────────────────────────────────────────────────
+
+
+@router.post(
+    "/{product_id}/inventory",
+    response_model=InventoryProfilePublic,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_inventory(
+    product_id: uuid.UUID,
+    data: InventoryProfileCreate,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    return await create_inventory_profile(db, current_user.id, product_id, data)
+
+
+@router.get("/{product_id}/inventory", response_model=InventoryProfilePublic)
+async def get_inventory(
+    product_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    profile = await get_inventory_profile(db, current_user.id, product_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Inventory profile not found")
+    return profile
+
+
+@router.patch("/{product_id}/inventory", response_model=InventoryProfilePublic)
+async def patch_inventory(
+    product_id: uuid.UUID,
+    data: InventoryProfileUpdate,
+    db: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    profile = await update_inventory_profile(db, current_user.id, product_id, data)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Inventory profile not found")
+    return profile

@@ -30,6 +30,9 @@ class Reminder(SQLModel, table=True):
     subscription_id: uuid.UUID | None = Field(
         default=None, foreign_key="subscription.id", index=True
     )
+    product_id: uuid.UUID | None = Field(
+        default=None, foreign_key="product.id", index=True
+    )
 
     created_at: datetime = Field(default_factory=_naive_utc_now)
     updated_at: datetime = Field(default_factory=_naive_utc_now)

@@ -32,6 +32,8 @@ import app.models.person_extensions  # noqa: F401
 import app.models.person_life_event  # noqa: F401
 import app.models.person_relationship  # noqa: F401
 import app.models.product  # noqa: F401
+import app.models.inventory  # noqa: F401
+import app.models.shopping_list  # noqa: F401
 import app.models.raven_log  # noqa: F401
 import app.models.raven_question  # noqa: F401
 import app.models.reference  # noqa: F401
