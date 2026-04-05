@@ -15,6 +15,7 @@ from app.api.v1.goals import router as goals_router
 from app.api.v1.households import router as households_router
 from app.api.v1.import_ import router as import_router
 from app.api.v1.interactions import router as interactions_router
+from app.api.v1.inventory import router as inventory_router
 from app.api.v1.iso_reference import router as iso_reference_router
 from app.api.v1.life_events import (
     life_events_router,
@@ -51,6 +52,7 @@ api_router.include_router(auth_router)
 api_router.include_router(households_router)
 api_router.include_router(persons_router)
 api_router.include_router(products_router)
+api_router.include_router(inventory_router)
 api_router.include_router(channels_router)
 api_router.include_router(addresses_router)
 api_router.include_router(relationships_router)
@@ -77,7 +79,6 @@ api_router.include_router(vocabularies_router)
 api_router.include_router(iso_reference_router)
 api_router.include_router(subscriptions_router)
 api_router.include_router(transactions_router)
-api_router.include_router(products_router)
 api_router.include_router(finances_router)
 api_router.include_router(budgets_router)
 api_router.include_router(notes_router)
