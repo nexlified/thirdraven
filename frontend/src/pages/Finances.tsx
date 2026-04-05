@@ -181,26 +181,34 @@ export function Finances() {
           {overview && overview.top_expense_categories.length > 0 && (
             <section className="finance-section">
               <h3 className="finance-section-title">Spending by Category</h3>
-              <div className="category-bars">
-                {overview.top_expense_categories.map((cat) => {
-                  const maxPct = overview.top_expense_categories[0].percentage;
-                  const barWidth = `${(cat.percentage / maxPct) * 100}%`;
-                  return (
-                    <div key={cat.category_slug} className="category-bar-row">
-                      <span className="category-bar-label">{cat.category_name}</span>
-                      <div className="category-bar-track">
-                        <div
-                          className="category-bar-fill"
-                          style={{ width: barWidth }}
-                        />
-                      </div>
-                      <span className="category-bar-amount">
-                        {fmt(cat.total)} ({cat.percentage.toFixed(1)}%)
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+              {(() => {
+                const maxPct = Math.max(
+                  ...overview.top_expense_categories.map((cat) => cat.percentage),
+                );
+
+                return (
+                  <div className="category-bars">
+                    {overview.top_expense_categories.map((cat) => {
+                      const barWidth =
+                        maxPct > 0 ? `${(cat.percentage / maxPct) * 100}%` : "0%";
+                      return (
+                        <div key={cat.category_slug} className="category-bar-row">
+                          <span className="category-bar-label">{cat.category_name}</span>
+                          <div className="category-bar-track">
+                            <div
+                              className="category-bar-fill"
+                              style={{ width: barWidth }}
+                            />
+                          </div>
+                          <span className="category-bar-amount">
+                            {fmt(cat.total)} ({cat.percentage.toFixed(1)}%)
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </section>
           )}
 
