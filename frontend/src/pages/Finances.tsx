@@ -225,12 +225,12 @@ export function Finances() {
                         />
                       </div>
                       <span className="budget-amounts">
-                        {fmt(b.spent)} of {fmt(b.amount)}
+                        {fmt(b.spent, b.currency)} of {fmt(b.amount, b.currency)}
                       </span>
                       <span className={over ? "text-danger" : "text-muted"}>
                         {over
-                          ? `${fmt(b.spent - b.amount)} over ⚠`
-                          : `${fmt(b.remaining)} left`}
+                          ? `${fmt(b.spent - b.amount, b.currency)} over ⚠`
+                          : `${fmt(b.remaining, b.currency)} left`}
                       </span>
                     </div>
                   );
