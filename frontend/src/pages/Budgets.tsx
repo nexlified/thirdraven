@@ -66,7 +66,11 @@ export function Budgets() {
   useEffect(() => {
     listTerms("expense-categories", { limit: 200 })
       .then(setExpenseTerms)
-      .catch(() => {});
+      .catch((err) => {
+        setError(
+          err instanceof Error ? err.message : "Failed to load expense categories"
+        );
+      });
   }, []);
 
   // Load budgets when month/year changes
