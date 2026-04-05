@@ -1896,7 +1896,8 @@ a:hover {
   transition: width 0.3s ease;
 }
 
-.budget-over .budget-fill {
+.budget-over .budget-fill,
+.budget-fill--over {
   background: var(--danger);
 }
 
@@ -1917,6 +1918,50 @@ a:hover {
 
 .text-muted {
   color: var(--text-muted);
+}
+
+/* Budget management page */
+
+.budget-month-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.budget-month-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-strong);
+  min-width: 150px;
+  text-align: center;
+}
+
+.budget-copy-message {
+  margin-bottom: 12px;
+  font-size: 0.875rem;
+  color: var(--success);
+}
+
+.budget-table td {
+  vertical-align: middle;
+}
+
+.budget-inline-edit {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 8px 4px;
+  flex-wrap: wrap;
+}
+
+.budget-inline-category {
+  font-weight: 600;
+  color: var(--text-strong);
+  white-space: nowrap;
+  align-self: center;
+  min-width: 100px;
 }
 
 /* Loans table inside finance page */

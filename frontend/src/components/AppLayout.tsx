@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { label: "Notes", icon: "○", path: "/notes" },
   { label: "Transactions", icon: "₹", path: "/transactions" },
   { label: "Finances", icon: "◈", path: "/finances" },
+  { label: "Budgets", icon: "⊟", path: "/budgets" },
   { label: "Subscriptions", icon: "◉", path: "/subscriptions" },
   { label: "Loans", icon: "◎", path: "/loans" },
   { label: "Reminders", icon: "◷", path: "/reminders" },
