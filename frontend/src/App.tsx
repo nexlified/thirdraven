@@ -112,6 +112,30 @@ export default function App() {
             }
           />
           <Route
+            path="/finances"
+            element={
+              <ProtectedRoute>
+                <Finances />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transactions"
+            element={
+              <ProtectedRoute>
+                <Transactions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/budgets"
+            element={
+              <ProtectedRoute>
+                <Budgets />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/reminders"
             element={
               <ProtectedRoute>
@@ -132,30 +156,6 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Settings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/transactions"
-            element={
-              <ProtectedRoute>
-                <Transactions />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/finances"
-            element={
-              <ProtectedRoute>
-                <Finances />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/budgets"
-            element={
-              <ProtectedRoute>
-                <Budgets />
               </ProtectedRoute>
             }
           />
