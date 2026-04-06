@@ -42,6 +42,7 @@ from app.api.v1.reminders import (
     router as reminders_router,
 )
 from app.api.v1.renewals import router as renewals_router
+from app.api.v1.shopping_lists import router as shopping_lists_router
 from app.api.v1.subscriptions import router as subscriptions_router
 from app.api.v1.tasks import router as tasks_router
 from app.api.v1.transactions import router as transactions_router
@@ -53,6 +54,7 @@ api_router.include_router(households_router)
 api_router.include_router(persons_router)
 api_router.include_router(products_router)
 api_router.include_router(inventory_router)
+api_router.include_router(shopping_lists_router)
 api_router.include_router(channels_router)
 api_router.include_router(addresses_router)
 api_router.include_router(relationships_router)
