@@ -8,7 +8,7 @@ from sqlmodel import select
 from app.models.inventory import InventoryProfile
 from app.models.product import Product
 from app.models.reminder import Reminder
-from app.models.shopping_list import ShoppingList, ShoppingListItem
+from app.models.shopping_list import ShoppingListItem
 from app.models.transaction_item import TransactionItem
 from app.schemas.inventory import (
     InventoryProfileCreate,
@@ -231,22 +231,9 @@ async def check_and_trigger_reorder(
         db.add(reminder)
 
     # 2. Add ShoppingListItem to active default list
-    list_result = await db.execute(
-        select(ShoppingList).where(
-            ShoppingList.owner_id == owner_id,
-            ShoppingList.name == "Auto Shopping List",
-            ShoppingList.is_active.is_(True),
-            ShoppingList.deleted_at.is_(None),
-        )
-    )
-    shopping_list = list_result.scalars().first()
-    if not shopping_list:
-        shopping_list = ShoppingList(
-            owner_id=owner_id,
-            name="Auto Shopping List",
-        )
-        db.add(shopping_list)
-        await db.flush()  # Obtain ID before linking items
+    from app.crud.shopping_list import get_or_create_default_list
+
+    shopping_list = await get_or_create_default_list(db, owner_id)
 
     # Check if product is already in the list unchecked
     item_result = await db.execute(
@@ -274,7 +261,7 @@ async def check_and_trigger_reorder(
             owner_id=owner_id,
             list_id=shopping_list.id,
             product_id=product_id,
-            name=product.name,
+            raw_name=product.name,
             # Suggest one month's worth as the restock quantity (per spec)
             quantity=profile.typical_monthly_usage,
             unit=profile.restock_unit,

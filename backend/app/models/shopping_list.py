@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from sqlmodel import Field, SQLModel
 
@@ -14,6 +14,10 @@ class ShoppingList(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid7, primary_key=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id", index=True)
     name: str
+    store_name: str | None = None
+    planned_date: date | None = None
+    is_completed: bool = Field(default=False)
+    completed_on: date | None = None
     is_active: bool = Field(default=True)
     notes: str | None = None
     created_at: datetime = Field(default_factory=_naive_utc_now)
@@ -30,10 +34,11 @@ class ShoppingListItem(SQLModel, table=True):
     product_id: uuid.UUID | None = Field(
         default=None, foreign_key="product.id", index=True
     )
-    name: str
+    raw_name: str
     quantity: float = Field(default=1.0)
     unit: str | None = None
     estimated_price: float | None = None
+    actual_price: float | None = None
     source: str | None = None  # "auto" | "manual"
     is_checked: bool = Field(default=False)
     created_at: datetime = Field(default_factory=_naive_utc_now)
