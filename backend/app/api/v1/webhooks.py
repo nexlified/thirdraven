@@ -181,15 +181,16 @@ async def process_bill_parsed(
             )
             profile = profile_result.scalars().first()
             if profile:
-                prev_stock = profile.current_stock
+                # Compute projected stock before calling the helper so the
+                # comparison is deterministic and doesn't depend on whether
+                # SQLAlchemy's identity map returns the same object instance.
+                projected_stock = profile.current_stock + item.quantity
                 await update_inventory_on_purchase(
                     db, owner_id, product_id, item.quantity, payload.transaction_date
                 )
-                # Count reorder trigger if stock crossed threshold
-                if (
-                    prev_stock > profile.reorder_threshold
-                    and profile.current_stock <= profile.reorder_threshold
-                ):
+                # Count products where stock is still at/below reorder
+                # threshold even after restocking (triggers a reorder reminder).
+                if projected_stock <= profile.reorder_threshold:
                     reorders_triggered += 1
 
     await db.commit()
