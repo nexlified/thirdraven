@@ -47,6 +47,7 @@ from app.api.v1.subscriptions import router as subscriptions_router
 from app.api.v1.tasks import router as tasks_router
 from app.api.v1.transactions import router as transactions_router
 from app.api.v1.vocabularies import router as vocabularies_router
+from app.api.v1.webhooks import router as webhooks_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
@@ -92,3 +93,4 @@ api_router.include_router(communications_router)
 api_router.include_router(import_router)
 api_router.include_router(raven_logs_router)
 api_router.include_router(raven_questions_router)
+api_router.include_router(webhooks_router)

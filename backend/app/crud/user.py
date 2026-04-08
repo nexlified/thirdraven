@@ -33,6 +33,13 @@ async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
     return result.scalar_one_or_none()
 
 
+async def get_user_by_api_key(db: AsyncSession, api_key: str) -> User | None:
+    result = await db.execute(
+        select(User).where(User.api_key == api_key, User.is_active.is_(True))
+    )
+    return result.scalar_one_or_none()
+
+
 def get_user_preferences(user: User) -> dict[str, Any]:
     current = user.preferences if isinstance(user.preferences, dict) else {}
     merged = {**_default_preferences(), **current}

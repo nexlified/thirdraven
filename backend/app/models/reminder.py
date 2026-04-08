@@ -16,6 +16,7 @@ class Reminder(SQLModel, table=True):
 
     title: str
     body: str | None = None
+    url: str | None = None
     due_at: datetime
     remind_at: datetime | None = None
     recurrence: str | None = None  # "daily"|"weekly"|"monthly"|"annual"
