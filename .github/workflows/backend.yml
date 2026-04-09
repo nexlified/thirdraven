@@ -47,8 +47,16 @@ jobs:
       - name: Lint
         run: cd backend && uv run ruff check .
 
-      - name: Run tests
-        run: cd backend && uv run pytest --tb=short -q
+      - name: Run unit tests
+        run: cd backend && uv run pytest --ignore=tests/integration --tb=short -q
         env:
+          DATABASE_URL: postgresql+asyncpg://thirdraven:secret@localhost:5432/thirdraven_db
+          SECRET_KEY: test-secret-key
+
+      - name: Run API integration tests
+        run: cd backend && uv run pytest tests/integration/test_api_*.py --run-integration --tb=short -q
+        env:
+          # DATABASE_URL is not used by API integration tests (they use SQLite),
+          # but the conftest imports get_settings() so a value must be present.
           DATABASE_URL: postgresql+asyncpg://thirdraven:secret@localhost:5432/thirdraven_db
           SECRET_KEY: test-secret-key

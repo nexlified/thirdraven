@@ -34,6 +34,9 @@ jobs:
       - name: Build
         run: cd frontend && npm run build
 
+      - name: Run unit tests
+        run: cd frontend && npm run test:unit
+
       - name: Install Playwright browsers
         run: cd frontend && npx playwright install --with-deps chromium
 
