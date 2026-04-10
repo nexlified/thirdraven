@@ -9,7 +9,7 @@ import hashlib
 import hmac
 import logging
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -262,7 +262,7 @@ async def process_price_alert(
             f" → {_currency_label(payload.currency)}{payload.new_price}"
         )
 
-    remind_dt = datetime.combine(date.today(), datetime.min.time()).replace(tzinfo=None)
+    remind_dt = datetime.now(UTC).replace(tzinfo=None)
     reminder = Reminder(
         owner_id=owner_id,
         title=title,
