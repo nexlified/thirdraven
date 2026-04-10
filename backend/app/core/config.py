@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     raven_ollama_url: str | None = None  # e.g. http://localhost:11434
     raven_model: str = "llama3.2"
+    priceraven_webhook_secret: str = ""  # HMAC shared secret; empty = disabled
+    priceraven_base_url: str = ""  # for ThirdRaven → PriceRaven queries (future)
+    priceraven_api_key: str = ""  # for ThirdRaven → PriceRaven queries (future)
 
 
 @lru_cache

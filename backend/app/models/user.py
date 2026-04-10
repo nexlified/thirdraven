@@ -27,6 +27,7 @@ class User(SQLModel, table=True):
     reset_password_token_expires_at: datetime | None = Field(
         default=None, nullable=True
     )
+    api_key: str | None = Field(default=None, nullable=True, index=True)
 
     # Link to the user's own Person record (set after creation).
     # use_alter defers the FK constraint so the circular person→user→person

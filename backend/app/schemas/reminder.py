@@ -7,6 +7,7 @@ from pydantic import BaseModel
 class ReminderCreate(BaseModel):
     title: str
     body: str | None = None
+    url: str | None = None
     due_at: datetime
     remind_at: datetime | None = None
     recurrence: str | None = None  # "daily"|"weekly"|"monthly"|"annual"
@@ -18,6 +19,7 @@ class ReminderCreate(BaseModel):
 class ReminderUpdate(BaseModel):
     title: str | None = None
     body: str | None = None
+    url: str | None = None
     due_at: datetime | None = None
     remind_at: datetime | None = None
     recurrence: str | None = None
@@ -29,6 +31,7 @@ class ReminderPublic(BaseModel):
     owner_id: uuid.UUID
     title: str
     body: str | None
+    url: str | None = None
     due_at: datetime
     remind_at: datetime | None
     recurrence: str | None

@@ -16,6 +16,7 @@ async def create_reminder(
         owner_id=owner_id,
         title=data.title,
         body=data.body,
+        url=data.url,
         due_at=data.due_at,
         remind_at=data.remind_at,
         recurrence=data.recurrence,
