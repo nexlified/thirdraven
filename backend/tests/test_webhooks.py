@@ -9,17 +9,15 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.api.v1.webhooks import _currency_label
 from app.api.v1.webhooks import router as webhooks_router
 from app.core.config import Settings
 from app.core.database import get_session
 from app.models.user import User
-from app.schemas.reminder import ReminderPublic
-from app.schemas.transaction import TransactionPublic
 
 OWNER_ID = uuid.uuid4()
 TX_ID = uuid.uuid4()
 REMINDER_ID = uuid.uuid4()
-PRODUCT_ID = uuid.uuid4()
 
 TEST_SECRET = "test-webhook-secret-abc123"
 BATCH_ID = "pr-batch-2026-001"
@@ -37,53 +35,6 @@ FAKE_USER = User(
 
 def _sign(body: bytes, secret: str = TEST_SECRET) -> str:
     return hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
-
-
-def make_transaction(**kwargs) -> TransactionPublic:
-    defaults = dict(
-        id=TX_ID,
-        owner_id=OWNER_ID,
-        transaction_type="expense",
-        amount=185.0,
-        currency="INR",
-        transacted_on=datetime(2026, 4, 1).date(),
-        description="Grocery Import",
-        category=None,
-        payment_method=None,
-        asset_id=None,
-        subscription_id=None,
-        merchant=None,
-        reference=None,
-        tags=[],
-        import_batch_id=BATCH_ID,
-        notes=None,
-        created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC),
-    )
-    defaults.update(kwargs)
-    return TransactionPublic(**defaults)
-
-
-def make_reminder(**kwargs) -> ReminderPublic:
-    defaults = dict(
-        id=REMINDER_ID,
-        owner_id=OWNER_ID,
-        title="Price drop! Amul Milk 1L on blinkit: ₹65.0 → ₹55.0",
-        body=None,
-        url=None,
-        due_at=datetime.now(UTC),
-        remind_at=None,
-        recurrence=None,
-        is_done=False,
-        done_at=None,
-        person_id=None,
-        asset_id=None,
-        subscription_id=None,
-        created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC),
-    )
-    defaults.update(kwargs)
-    return ReminderPublic(**defaults)
 
 
 def make_settings(**overrides) -> Settings:
@@ -152,6 +103,29 @@ def app_client():
         yield client
 
     app.dependency_overrides.clear()
+
+
+# ── _currency_label unit tests ────────────────────────────────────────────────
+
+
+def test_currency_label_known_currencies():
+    """Known ISO codes return their symbol."""
+    assert _currency_label("INR") == "₹"
+    assert _currency_label("USD") == "$"
+    assert _currency_label("EUR") == "€"
+    assert _currency_label("GBP") == "£"
+
+
+def test_currency_label_unknown_currency_returns_iso_code():
+    """Unknown ISO codes fall back to the uppercased code itself."""
+    assert _currency_label("XYZ") == "XYZ"
+    assert _currency_label("xyz") == "XYZ"
+
+
+def test_currency_label_case_insensitive():
+    """Lookup is case-insensitive."""
+    assert _currency_label("inr") == "₹"
+    assert _currency_label("Usd") == "$"
 
 
 # ── POST /webhooks/priceraven/bill-parsed ─────────────────────────────────────
@@ -413,6 +387,39 @@ def test_price_alert_success_price_up(app_client):
     settings = make_settings()
     up_payload = {**PRICE_ALERT_PAYLOAD, "direction": "up", "new_price": 75.0}
     body = json.dumps(up_payload).encode()
+    with (
+        patch("app.api.v1.webhooks.get_settings", return_value=settings),
+        patch(
+            "app.api.v1.webhooks.get_user_by_api_key",
+            new=AsyncMock(return_value=FAKE_USER),
+        ),
+        patch(
+            "app.api.v1.webhooks.process_price_alert",
+            new=AsyncMock(return_value={"reminder_id": str(REMINDER_ID)}),
+        ),
+    ):
+        resp = app_client.post(
+            "/api/v1/webhooks/priceraven/price-alert",
+            content=body,
+            headers={
+                "Content-Type": "application/json",
+                "X-PriceRaven-Signature": _sign(body),
+            },
+        )
+    assert resp.status_code == 200
+    assert resp.json()["reminder_id"] == str(REMINDER_ID)
+
+
+def test_price_alert_non_inr_currency(app_client):
+    """Price alert with non-INR currency uses the correct symbol."""
+    settings = make_settings()
+    usd_payload = {
+        **PRICE_ALERT_PAYLOAD,
+        "currency": "USD",
+        "old_price": 1.99,
+        "new_price": 1.49,
+    }
+    body = json.dumps(usd_payload).encode()
     with (
         patch("app.api.v1.webhooks.get_settings", return_value=settings),
         patch(

@@ -28,6 +28,26 @@ from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
+# Common ISO 4217 currency symbols; fall back to the ISO code for unknowns.
+_CURRENCY_SYMBOLS: dict[str, str] = {
+    "INR": "₹",
+    "USD": "$",
+    "EUR": "€",
+    "GBP": "£",
+    "JPY": "¥",
+    "CNY": "¥",
+    "AUD": "A$",
+    "CAD": "C$",
+    "CHF": "Fr",
+    "SGD": "S$",
+    "AED": "د.إ",
+}
+
+
+def _currency_label(currency: str) -> str:
+    return _CURRENCY_SYMBOLS.get(currency.upper(), currency.upper())
+
+
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
 
@@ -232,12 +252,14 @@ async def process_price_alert(
     if payload.direction == "down":
         title = (
             f"Price drop! {product.name} on {payload.platform}: "
-            f"₹{payload.old_price} → ₹{payload.new_price}"
+            f"{_currency_label(payload.currency)}{payload.old_price}"
+            f" → {_currency_label(payload.currency)}{payload.new_price}"
         )
     else:
         title = (
             f"Price increase: {product.name} on {payload.platform}: "
-            f"₹{payload.old_price} → ₹{payload.new_price}"
+            f"{_currency_label(payload.currency)}{payload.old_price}"
+            f" → {_currency_label(payload.currency)}{payload.new_price}"
         )
 
     remind_dt = datetime.combine(date.today(), datetime.min.time()).replace(tzinfo=None)
